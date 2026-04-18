@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Cart;
 use App\Models\CartItem;
 use Illuminate\Support\Facades\Cache;
 
@@ -38,8 +39,10 @@ class CartCacheService
                 return Cache::get($cacheKey);
             }
 
-            $items = CartItem::with('product')
-                ->where('user_id', $userId)
+            $cart = Cart::firstOrCreate(['user_id' => $userId]);
+
+            $items = $cart->items()
+                ->with('product')
                 ->get()
                 ->toArray();
 

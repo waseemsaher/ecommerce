@@ -12,13 +12,13 @@ return new class extends Migration
             'carts',
             function (Blueprint $table) {
                 $table->id();
-                $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+                $table->foreignId('user_id')->unique()->constrained()->cascadeOnDelete();
                 $table->timestamps();
             }
         );
     }
     public function down(): void
     {
-        Schema::dropIfExists('cart');
+        Schema::dropIfExists('carts');
     }
 };

@@ -19,7 +19,6 @@ return new class extends Migration
             $table->boolean('is_active')->default(true);
             $table->timestamps();
             $table->softDeletes();
-
             // Indexes
             $table->index(['is_active', 'stock'], 'idx_products_active_stock');
             $table->index('price', 'idx_products_price');

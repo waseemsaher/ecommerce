@@ -44,12 +44,12 @@ class ProductController extends Controller
     }
 
     /**
-     * GET /api/v1/products/{id}
+     * GET /api/v1/products/{slug}
      * Single product detail; 404 if not found.
      */
-    public function show(int $id): JsonResponse
+    public function show(string $slug): JsonResponse
     {
-        $product = Product::find($id);
+        $product = Product::where('slug', $slug)->first();
 
         if (! $product) {
             return response()->json([

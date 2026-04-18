@@ -94,9 +94,11 @@ class ProductSeeder extends Seeder
         ];
 
         foreach ($products as $data) {
+            $seed = rawurlencode(Str::slug($data['name']));
             Product::create([
                 ...$data,
                 'slug' => Str::slug($data['name']),
+                'image_path' => "https://picsum.photos/seed/{$seed}/800/800",
             ]);
         }
     }

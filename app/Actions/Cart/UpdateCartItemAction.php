@@ -3,6 +3,7 @@
 namespace App\Actions\Cart;
 
 use App\Exceptions\CartItemNotFoundException;
+use App\Models\Cart;
 use App\Models\CartItem;
 use App\Services\CartCacheService;
 
@@ -12,7 +13,13 @@ class UpdateCartItemAction
 
     public function execute(int $userId, int $productId, int $quantity): CartItem
     {
-        $item = CartItem::where('user_id', $userId)
+        $cart = Cart::where('user_id', $userId)->first();
+
+        if (! $cart) {
+            throw new CartItemNotFoundException();
+        }
+
+        $item = CartItem::where('cart_id', $cart->id)
             ->where('product_id', $productId)
             ->first();
 

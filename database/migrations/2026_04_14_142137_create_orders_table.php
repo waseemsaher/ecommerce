@@ -20,7 +20,6 @@ return new class extends Migration
             $table->text('notes')->nullable();
             $table->timestamps();
             $table->softDeletes();
-
             $table->index(['user_id', 'status'], 'idx_orders_user_status');
             $table->index('created_at', 'idx_orders_created');
         });

@@ -1,7 +1,7 @@
 <?php
 
 namespace Tests\Feature;
-use App\Exceptions\EmptyCartException;
+use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Product;
 use App\Models\User;
@@ -24,6 +24,11 @@ class CartTest extends TestCase
         $this->product = Product::factory()->create(['stock' => 10]);
     }
 
+    private function cartId(): int
+    {
+        return Cart::firstOrCreate(['user_id' => $this->user->id])->id;
+    }
+
     // ── GET /cart ─────────────────────────────────────────────────────────────
 
     public function test_get_cart_returns_empty_for_new_user(): void
@@ -36,8 +41,7 @@ class CartTest extends TestCase
 
     public function test_get_cart_eager_loads_product(): void
     {
-        CartItem::factory()->create([
-            'user_id'    => $this->user->id,
+        CartItem::factory()->forUser($this->user)->create([
             'product_id' => $this->product->id,
             'quantity'   => 2,
         ]);
@@ -62,7 +66,7 @@ class CartTest extends TestCase
             ->assertJsonPath('data.quantity', 2);
 
         $this->assertDatabaseHas('cart_items', [
-            'user_id'    => $this->user->id,
+            'cart_id'    => $this->cartId(),
             'product_id' => $this->product->id,
             'quantity'   => 2,
         ]);
@@ -70,8 +74,7 @@ class CartTest extends TestCase
 
     public function test_adding_existing_item_increments_quantity(): void
     {
-        CartItem::factory()->create([
-            'user_id'    => $this->user->id,
+        CartItem::factory()->forUser($this->user)->create([
             'product_id' => $this->product->id,
             'quantity'   => 3,
         ]);
@@ -89,8 +92,7 @@ class CartTest extends TestCase
 
     public function test_update_cart_item_quantity(): void
     {
-        CartItem::factory()->create([
-            'user_id'    => $this->user->id,
+        CartItem::factory()->forUser($this->user)->create([
             'product_id' => $this->product->id,
             'quantity'   => 1,
         ]);
@@ -113,8 +115,7 @@ class CartTest extends TestCase
     #[Test]
     public function test_remove_cart_item(): void
     {
-        CartItem::factory()->create([
-            'user_id'    => $this->user->id,
+        CartItem::factory()->forUser($this->user)->create([
             'product_id' => $this->product->id,
         ]);
 
@@ -124,7 +125,7 @@ class CartTest extends TestCase
             ->assertJson(['message' => 'Item removed']);
 
         $this->assertDatabaseMissing('cart_items', [
-            'user_id'    => $this->user->id,
+            'cart_id'    => $this->cartId(),
             'product_id' => $this->product->id,
         ]);
     }
@@ -141,7 +142,7 @@ class CartTest extends TestCase
 
     public function test_clear_cart(): void
     {
-        CartItem::factory()->count(3)->create(['user_id' => $this->user->id]);
+        CartItem::factory()->count(3)->forUser($this->user)->create();
 
         $this->actingAs($this->user)
             ->deleteJson('/api/cart')
@@ -181,8 +182,7 @@ class CartTest extends TestCase
         $cacheKey = "cart:v1:{$this->user->id}";
         Cache::put($cacheKey, ['stale' => 'data'], 3600);
 
-        CartItem::factory()->create([
-            'user_id'    => $this->user->id,
+        CartItem::factory()->forUser($this->user)->create([
             'product_id' => $this->product->id,
         ]);
 
@@ -198,7 +198,7 @@ class CartTest extends TestCase
         $cacheKey = "cart:v1:{$this->user->id}";
         Cache::put($cacheKey, ['stale' => 'data'], 3600);
 
-        CartItem::factory()->count(2)->create(['user_id' => $this->user->id]);
+        CartItem::factory()->count(2)->forUser($this->user)->create();
 
         $this->actingAs($this->user)->deleteJson('/api/cart')->assertOk();
 

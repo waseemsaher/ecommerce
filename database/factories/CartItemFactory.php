@@ -11,11 +11,21 @@ class CartItemFactory extends Factory
 {
     public function definition(): array
     {
+        $user = User::factory()->create();
+
         return [
-            'user_id'    => User::factory(),
-            'cart_id'    => fn (array $attributes) => Cart::firstOrCreate(['user_id' => $attributes['user_id']])->id,
+            'cart_id'    => Cart::firstOrCreate(['user_id' => $user->id])->id,
             'product_id' => Product::factory(),
             'quantity'   => $this->faker->numberBetween(1, 5),
         ];
+    }
+
+    public function forUser(User|int $user): self
+    {
+        $userId = $user instanceof User ? $user->id : $user;
+
+        return $this->state(fn () => [
+            'cart_id' => Cart::firstOrCreate(['user_id' => $userId])->id,
+        ]);
     }
 }
