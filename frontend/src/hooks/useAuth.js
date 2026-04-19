@@ -85,3 +85,29 @@ export function useLogout() {
     },
   });
 }
+
+export function useForgotPassword() {
+  return useMutation({
+    mutationFn: authApi.forgotPassword,
+    onError: (error) => {
+      const message = getApiErrorMessage(error, 'Something went wrong. Please try again.');
+      toast.error(message);
+    },
+  });
+}
+
+export function useResetPassword() {
+  const navigate = useNavigate();
+
+  return useMutation({
+    mutationFn: authApi.resetPassword,
+    onSuccess: () => {
+      toast.success('Password reset successfully! Please sign in.');
+      navigate('/login');
+    },
+    onError: (error) => {
+      const message = getApiErrorMessage(error, 'Password reset failed. The link may have expired.');
+      toast.error(message);
+    },
+  });
+}

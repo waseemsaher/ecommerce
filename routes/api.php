@@ -3,6 +3,8 @@
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\LogoutController;
 use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\Auth\ForgotPasswordController;
+use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\Api\ProductController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CartController;
@@ -17,6 +19,12 @@ Route::prefix('auth')->group(function () {
 
     Route::post('/logout', LogoutController::class)
         ->middleware('auth:sanctum');
+
+    Route::post('/password/forgot', ForgotPasswordController::class)
+        ->middleware('throttle:login');
+
+    Route::post('/password/reset', ResetPasswordController::class)
+        ->middleware('throttle:login');
 
 });
 

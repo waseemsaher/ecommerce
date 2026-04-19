@@ -84,7 +84,7 @@ class ProductTest extends TestCase
     {
         $product = Product::factory()->create(['name' => 'Wireless Headphones']);
 
-        $this->getJson("/api/v1/products/{$product->id}")
+        $this->getJson("/api/v1/products/{$product->slug}")
             ->assertOk()
             ->assertJsonFragment([
                 'success' => true,

@@ -19,3 +19,18 @@ export const logout = async () => {
   const { data } = await client.post('/auth/logout');
   return data;
 };
+
+export const forgotPassword = async ({ email }) => {
+  const { data } = await client.post('/auth/password/forgot', { email });
+  return data;
+};
+
+export const resetPassword = async ({ token, email, password, password_confirmation }) => {
+  const { data } = await client.post('/auth/password/reset', {
+    token,
+    email,
+    password,
+    password_confirmation,
+  });
+  return data;
+};

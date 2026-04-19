@@ -84,6 +84,12 @@ export default function Login() {
             autoComplete="current-password"
           />
 
+          <div className="auth-card__options">
+            <Link to="/forgot-password" className="auth-card__forgot-link">
+              Forgot password?
+            </Link>
+          </div>
+
           <Button
             type="submit"
             fullWidth

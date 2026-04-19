@@ -18,7 +18,6 @@ class AddToCartAction
         $cart = Cart::firstOrCreate(['user_id' => $userId]);
 
         $item = CartItem::firstOrNew([
-            'user_id'    => $userId,
             'cart_id'    => $cart->id,
             'product_id' => $productId,
         ]);
