@@ -5,6 +5,7 @@ use App\Http\Controllers\Auth\LogoutController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\ResetPasswordController;
+use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\ProductController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CartController;
@@ -33,6 +34,14 @@ Route::prefix('v1')->group(function () {
     // ── Public — Product Catalog ──────────────────────────────
     Route::get('/products',      [ProductController::class, 'index']);
     Route::get('/products/{slug}', [ProductController::class, 'show']);
+
+    Route::middleware(['auth:sanctum', 'throttle:checkout'])
+        ->group(function () {
+            Route::post('/checkout', [OrderController::class, 'checkout'])
+                ->middleware('idempotency');
+            Route::get('/orders', [OrderController::class, 'index']);
+            Route::get('/orders/{id}', [OrderController::class, 'show']);
+        });
 
 });
 

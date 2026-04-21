@@ -25,7 +25,8 @@ export default function Header() {
     setMenuOpen(false);
   }, [location.pathname]);
 
-  const isActive = (path) => location.pathname === path;
+  const isActive = (path) =>
+    location.pathname === path || location.pathname.startsWith(`${path}/`);
 
   return (
     <header className={`header ${scrolled ? 'header--scrolled' : ''}`}>
@@ -45,12 +46,20 @@ export default function Header() {
             Products
           </Link>
           {isAuthenticated && (
-            <Link
-              to="/cart"
-              className={`header__link ${isActive('/cart') ? 'header__link--active' : ''}`}
-            >
-              Cart
-            </Link>
+            <>
+              <Link
+                to="/orders"
+                className={`header__link ${isActive('/orders') ? 'header__link--active' : ''}`}
+              >
+                Orders
+              </Link>
+              <Link
+                to="/cart"
+                className={`header__link ${isActive('/cart') ? 'header__link--active' : ''}`}
+              >
+                Cart
+              </Link>
+            </>
           )}
         </nav>
 
@@ -111,6 +120,9 @@ export default function Header() {
           </Link>
           {isAuthenticated ? (
             <>
+              <Link to="/orders" className="header__mobile-link">
+                Orders
+              </Link>
               <Link to="/cart" className="header__mobile-link">
                 Cart {itemCount > 0 && `(${itemCount})`}
               </Link>

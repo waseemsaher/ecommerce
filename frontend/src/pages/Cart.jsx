@@ -1,6 +1,7 @@
 import '../styles/pages/Cart.css';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getCart, updateCartItem, removeCartItem, clearCart } from '../api/cart';
+import { checkout } from '../api/orders';
 import { Link } from 'react-router-dom';
 import {
   Minus, Plus, Trash2, ShoppingBag, ArrowRight,
@@ -10,7 +11,8 @@ import Button from '../components/ui/Button';
 import { Skeleton } from '../components/ui/Skeleton';
 import useCartStore from '../store/cartStore';
 import toast from 'react-hot-toast';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { getProductImageUrl } from '../utils/productImage';
 
 function normalizeCartItems(payload) {
@@ -39,9 +41,18 @@ function getItemSubtotal(item) {
 
 export default function Cart() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const setItemCount = useCartStore((s) => s.setItemCount);
   const [removingId, setRemovingId] = useState(null);
   const [updatingId, setUpdatingId] = useState(null);
+  const [checkoutError, setCheckoutError] = useState('');
+  const idempotencyKey = useMemo(() => {
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+      return crypto.randomUUID();
+    }
+
+    return `checkout-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  }, []);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['cart'],
@@ -102,6 +113,22 @@ export default function Cart() {
     },
     onError: () => {
       toast.error('Failed to clear cart');
+    },
+  });
+
+  const checkoutMutation = useMutation({
+    mutationFn: () => checkout({ idempotencyKey }),
+    onMutate: () => setCheckoutError(''),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['cart'] });
+      setItemCount(0);
+      toast.success('Checkout completed successfully');
+      navigate(`/orders/${data?.data?.id}`);
+    },
+    onError: (error) => {
+      const message = error.response?.data?.message || 'Checkout failed';
+      setCheckoutError(message);
+      toast.error(message);
     },
   });
 
@@ -301,14 +328,18 @@ export default function Cart() {
               fullWidth
               icon={ArrowRight}
               iconPosition="right"
-              disabled
+              loading={checkoutMutation.isPending}
+              onClick={() => checkoutMutation.mutate()}
               className="cart-summary__checkout-btn"
             >
               Proceed to Checkout
             </Button>
             <p className="cart-summary__note">
-              Checkout will be available once the backend is complete.
+              This will place the order immediately and reserve stock.
             </p>
+            {checkoutError && (
+              <p className="cart-summary__error">{checkoutError}</p>
+            )}
 
             <Link to="/products" className="cart-summary__continue">
               ← Continue Shopping

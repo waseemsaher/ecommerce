@@ -263,6 +263,14 @@
   font-style: italic;
 }
 
+.cart-summary__error {
+  margin-top: calc(var(--space-2) * -1);
+  margin-bottom: var(--space-4);
+  color: var(--danger);
+  font-size: var(--text-sm);
+  text-align: center;
+}
+
 .cart-summary__continue {
   display: block;
   text-align: center;

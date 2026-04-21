@@ -14,6 +14,8 @@ import ResetPassword from './pages/ResetPassword';
 import Products from './pages/Products';
 import ProductDetail from './pages/ProductDetail';
 import Cart from './pages/Cart';
+import Orders from './pages/Orders';
+import OrderDetail from './pages/OrderDetail';
 import NotFound from './pages/NotFound';
 
 const queryClient = new QueryClient({
@@ -48,6 +50,22 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <Cart />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/orders"
+              element={
+                <ProtectedRoute>
+                  <Orders />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/orders/:id"
+              element={
+                <ProtectedRoute>
+                  <OrderDetail />
                 </ProtectedRoute>
               }
             />
