@@ -122,8 +122,16 @@ export default function Cart() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['cart'] });
       setItemCount(0);
-      toast.success('Checkout completed successfully');
-      navigate(`/orders/${data?.data?.id}`);
+      const orderId = data?.data?.id;
+
+      if (orderId) {
+        toast.success('Order created. Complete payment to confirm it.');
+        navigate(`/orders/${orderId}`);
+        return;
+      }
+
+      toast('Order created. Opening order list.');
+      navigate('/orders');
     },
     onError: (error) => {
       const message = error.response?.data?.message || 'Checkout failed';

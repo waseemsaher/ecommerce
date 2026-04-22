@@ -2,11 +2,13 @@
 
 namespace Tests\Feature;
 
+use App\Events\OrderPlaced;
 use App\Models\CartItem;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Event;
 use Tests\TestCase;
 
 class CheckoutTest extends TestCase
@@ -23,6 +25,8 @@ class CheckoutTest extends TestCase
 
     public function test_checkout_creates_order_and_clears_cart(): void
     {
+        Event::fake([OrderPlaced::class]);
+
         $user = User::factory()->create();
         $product = Product::factory()->create([
             'price' => 25.00,
@@ -36,7 +40,7 @@ class CheckoutTest extends TestCase
             ->postJson('/api/v1/checkout');
 
         $response->assertCreated()
-            ->assertJsonPath('data.status', 'pending')
+            ->assertJsonPath('data.status', 'processing')
             ->assertJsonPath('data.payment_status', 'pending')
             ->assertJsonPath('data.items.0.product.id', $product->id);
 
@@ -51,7 +55,14 @@ class CheckoutTest extends TestCase
             'id'    => $product->id,
             'stock' => 3,
         ]);
+        $this->assertDatabaseHas('payments', [
+            'order_id' => $response->json('data.id'),
+            'method'   => 'stripe',
+            'status'   => 'pending',
+        ]);
         $this->assertDatabaseCount('cart_items', 0);
+
+        Event::assertDispatched(OrderPlaced::class);
     }
 
     public function test_checkout_returns_empty_cart_error(): void

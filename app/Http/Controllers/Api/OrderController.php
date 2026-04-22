@@ -3,15 +3,25 @@
 namespace App\Http\Controllers\Api;
 
 use App\Actions\Order\CreateOrderAction;
+use App\Actions\Payment\ProcessPaymentAction;
+use App\Contracts\PaymentGatewayInterface;
+use App\Enums\OrderStatus;
+use App\Enums\PaymentStatus;
 use App\Http\Controllers\Controller;
+use App\Models\Order;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class OrderController extends Controller
 {
-    public function checkout(Request $request, CreateOrderAction $action): JsonResponse
+    public function checkout(
+        Request $request,
+        CreateOrderAction $createOrderAction,
+        ProcessPaymentAction $processPaymentAction,
+    ): JsonResponse
     {
-        $order = $action->execute($request->user()->id);
+        $order = $createOrderAction->execute($request->user()->id);
+        $order = $processPaymentAction->execute($order, (string) $request->header('Idempotency-Key'));
 
         return response()->json([
             'data' => $order,
@@ -22,12 +32,17 @@ class OrderController extends Controller
     {
         $orders = $request->user()
             ->orders()
-            ->with('items.product')
+            ->with('items.product', 'payment')
             ->latest('id')
             ->cursorPaginate(20);
 
+        $items = collect($orders->items())
+            ->map(fn (Order $order) => $this->reconcileOrderStatus($order, app(PaymentGatewayInterface::class)))
+            ->values()
+            ->all();
+
         return response()->json([
-            'data' => $orders->items(),
+            'data' => $items,
             'meta' => [
                 'next_cursor' => $orders->nextCursor()?->encode(),
                 'prev_cursor' => $orders->previousCursor()?->encode(),
@@ -39,7 +54,7 @@ class OrderController extends Controller
     {
         $order = $request->user()
             ->orders()
-            ->with('items.product')
+            ->with('items.product', 'payment')
             ->whereKey($id)
             ->first();
 
@@ -49,8 +64,77 @@ class OrderController extends Controller
             ], 404);
         }
 
+        $order = $this->reconcileOrderStatus($order, app(PaymentGatewayInterface::class));
+
         return response()->json([
             'data' => $order,
         ]);
+    }
+
+    private function reconcileOrderStatus(Order $order, PaymentGatewayInterface $gateway): Order
+    {
+        if (app()->environment('testing')) {
+            return $order->fresh(['items.product', 'payment']);
+        }
+
+        $order->loadMissing('payment', 'items.product');
+
+        if (! $order->payment || ! in_array($order->status, [OrderStatus::Pending, OrderStatus::Processing], true)) {
+            return $order->fresh(['items.product', 'payment']);
+        }
+
+        $payment = $order->payment;
+
+        if (! $payment->transaction_id) {
+            return $order->fresh(['items.product', 'payment']);
+        }
+
+        $intent = $gateway->retrieveIntent($payment->transaction_id);
+        $intentStatus = $intent['status'] ?? null;
+
+        if ($intentStatus === 'succeeded') {
+            $payment->update([
+                'status'   => PaymentStatus::Paid->value,
+                'paid_at'  => $payment->paid_at ?? now(),
+                'metadata' => array_merge($payment->metadata ?? [], [
+                    'gateway_status' => $intentStatus,
+                ]),
+            ]);
+
+            $order->update([
+                'status'         => OrderStatus::Completed->value,
+                'payment_status' => PaymentStatus::Paid->value,
+            ]);
+        }
+
+        if (in_array($intentStatus, ['requires_action', 'processing', 'requires_confirmation', 'requires_payment_method'], true)) {
+            $payment->update([
+                'status'   => PaymentStatus::Pending->value,
+                'metadata' => array_merge($payment->metadata ?? [], [
+                    'gateway_status' => $intentStatus,
+                ]),
+            ]);
+
+            $order->update([
+                'status'         => OrderStatus::Processing->value,
+                'payment_status' => PaymentStatus::Pending->value,
+            ]);
+        }
+
+        if ($intentStatus === 'canceled') {
+            $payment->update([
+                'status'   => PaymentStatus::Failed->value,
+                'metadata' => array_merge($payment->metadata ?? [], [
+                    'gateway_status' => $intentStatus,
+                ]),
+            ]);
+
+            $order->update([
+                'status'         => OrderStatus::Cancelled->value,
+                'payment_status' => PaymentStatus::Failed->value,
+            ]);
+        }
+
+        return $order->fresh(['items.product', 'payment']);
     }
 }

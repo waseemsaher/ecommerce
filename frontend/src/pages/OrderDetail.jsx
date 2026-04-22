@@ -1,11 +1,27 @@
 import '../styles/pages/Orders.css';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, Package, Truck, CircleCheckBig, Clock3 } from 'lucide-react';
+import { Elements } from '@stripe/react-stripe-js';
+import { loadStripe } from '@stripe/stripe-js';
+import {
+  ArrowLeft,
+  AlertTriangle,
+  Package,
+  Truck,
+  CircleCheckBig,
+  Clock3,
+  CreditCard,
+  RefreshCw,
+} from 'lucide-react';
 import { getOrder } from '../api/orders';
 import Button from '../components/ui/Button';
 import { Skeleton } from '../components/ui/Skeleton';
 import { getProductImageUrl } from '../utils/productImage';
+import PaymentForm from '../components/payments/PaymentForm';
+
+const stripePromise = import.meta.env.VITE_STRIPE_KEY
+  ? loadStripe(import.meta.env.VITE_STRIPE_KEY)
+  : null;
 
 function formatMoney(value) {
   return Number(value || 0).toFixed(2);
@@ -17,13 +33,53 @@ function formatStatus(value) {
 
 export default function OrderDetail() {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const numericOrderId = Number(id);
+  const hasValidId = Number.isInteger(numericOrderId) && numericOrderId > 0;
 
-  const { data, isLoading, error } = useQuery({
+  const {
+    data,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
     queryKey: ['order', id],
-    queryFn: () => getOrder(id),
+    queryFn: () => getOrder(numericOrderId),
+    enabled: hasValidId,
+    refetchInterval: (query) => {
+      const currentOrder = query.state.data?.data;
+      if (!currentOrder) {
+        return false;
+      }
+
+      if (['pending', 'processing'].includes(currentOrder.status)) {
+        return 5000;
+      }
+
+      return false;
+    },
   });
 
   const order = data?.data;
+  const apiMessage = error?.response?.data?.message;
+  const apiStatus = error?.response?.status;
+
+  if (!hasValidId) {
+    return (
+      <div className="orders-page page-enter">
+        <div className="orders-page__inner container">
+          <div className="orders-page__empty glass">
+            <Package size={44} />
+            <h2>Invalid order link</h2>
+            <p>The order identifier in this URL is invalid.</p>
+            <Button variant="secondary" onClick={() => navigate('/orders')} icon={ArrowLeft}>
+              Back to orders
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -51,10 +107,16 @@ export default function OrderDetail() {
           <div className="orders-page__empty glass">
             <Package size={44} />
             <h2>Order not found</h2>
-            <p>The order you requested does not exist or cannot be loaded.</p>
-            <Link to="/orders">
-              <Button variant="secondary" icon={ArrowLeft}>Back to orders</Button>
-            </Link>
+            <p>{apiMessage || 'The order you requested does not exist or cannot be loaded.'}</p>
+            {apiStatus ? <p>HTTP status: {apiStatus}</p> : null}
+            <div className="order-detail__error-actions">
+              <Button variant="secondary" icon={RefreshCw} onClick={() => refetch()}>
+                Retry
+              </Button>
+              <Link to="/orders">
+                <Button variant="secondary" icon={ArrowLeft}>Back to orders</Button>
+              </Link>
+            </div>
           </div>
         </div>
       </div>
@@ -62,6 +124,8 @@ export default function OrderDetail() {
   }
 
   const items = order.items || [];
+  const clientSecret = order.payment?.metadata?.client_secret;
+  const canPay = order.status === 'processing' && order.payment_status === 'pending' && clientSecret;
 
   return (
     <div className="orders-page page-enter">
@@ -96,6 +160,94 @@ export default function OrderDetail() {
               {items.length} item(s)
             </span>
           </div>
+
+          {order.payment && (
+            <div className="order-detail__payment glass">
+              <div className="order-detail__payment-header">
+                <div>
+                  <span className="order-detail__payment-label">Payment</span>
+                  <h2>{formatStatus(order.payment.method)}</h2>
+                </div>
+                <span className={`orders-page__payment orders-page__payment--${order.payment.status}`}>
+                  <CreditCard size={12} />
+                  {formatStatus(order.payment.status)}
+                </span>
+              </div>
+
+              <div className="order-detail__payment-grid">
+                <div>
+                  <span>Transaction ID</span>
+                  <strong>{order.payment.transaction_id || 'Pending'}</strong>
+                </div>
+                <div>
+                  <span>Amount</span>
+                  <strong>${formatMoney(order.payment.amount)}</strong>
+                </div>
+                <div>
+                  <span>Currency</span>
+                  <strong>{String(order.payment.currency || 'USD').toUpperCase()}</strong>
+                </div>
+                <div>
+                  <span>Gateway</span>
+                  <strong>{formatStatus(order.payment.method)}</strong>
+                </div>
+              </div>
+
+              {order.status === 'processing' && (
+                <div className="order-detail__payment-note">
+                  <RefreshCw size={14} />
+                  We are polling for payment updates every few seconds until the order is completed.
+                </div>
+              )}
+
+              {canPay && stripePromise && (
+                <div className="order-detail__paybox">
+                  <h3>Complete your payment</h3>
+                  <p>
+                    Confirm the Stripe payment intent to complete the transaction.
+                  </p>
+                  <Elements
+                    stripe={stripePromise}
+                    options={{
+                      clientSecret,
+                      appearance: {
+                        theme: 'night',
+                        variables: {
+                          colorPrimary: '#7c5cfc',
+                          colorText: '#f0f0f8',
+                          colorBackground: '#151520',
+                          colorDanger: '#ff6b6b',
+                          fontFamily: 'Inter, system-ui, sans-serif',
+                        },
+                      },
+                    }}
+                  >
+                    <PaymentForm
+                      clientSecret={clientSecret}
+                      orderNumber={order.order_number}
+                      onSuccess={() => {
+                        navigate(`/orders/${order.id}/success`);
+                      }}
+                    />
+                  </Elements>
+                </div>
+              )}
+
+              {order.status === 'processing' && !clientSecret && (
+                <div className="order-detail__payment-note">
+                  <AlertTriangle size={14} />
+                  Payment information is still being prepared. Refresh in a moment if the form does not appear.
+                </div>
+              )}
+
+              {order.status !== 'processing' && order.status !== 'completed' && (
+                <div className="order-detail__payment-note">
+                  <AlertTriangle size={14} />
+                  This order is not ready for payment confirmation.
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="order-detail__grid">
             <section className="order-detail__items">

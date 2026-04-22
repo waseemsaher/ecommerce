@@ -39,6 +39,7 @@ class OrderTest extends TestCase
         $this->actingAs($user)
             ->getJson('/api/v1/orders')
             ->assertOk()
+            ->assertJsonPath('data.0.status', 'processing')
             ->assertJsonPath('data.0.id', $order['id']);
     }
 
@@ -50,6 +51,7 @@ class OrderTest extends TestCase
         $this->actingAs($user)
             ->getJson('/api/v1/orders/'.$order['id'])
             ->assertOk()
+            ->assertJsonPath('data.status', 'processing')
             ->assertJsonPath('data.id', $order['id']);
     }
 }

@@ -2,7 +2,7 @@ import '../styles/pages/Orders.css';
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Clock3, Package, ChevronRight, ReceiptText } from 'lucide-react';
+import { Clock3, Package, ChevronRight, ReceiptText, CreditCard } from 'lucide-react';
 import { getOrders } from '../api/orders';
 import Button from '../components/ui/Button';
 import { Skeleton } from '../components/ui/Skeleton';
@@ -19,6 +19,9 @@ export default function Orders() {
   const { data, isLoading } = useQuery({
     queryKey: ['orders'],
     queryFn: () => getOrders(),
+    staleTime: 0,
+    refetchInterval: 5000,
+    refetchOnWindowFocus: true,
   });
 
   const orders = data?.data || [];
@@ -72,9 +75,15 @@ export default function Orders() {
                       <span className="orders-page__number">{order.order_number}</span>
                       <h2 className="orders-page__amount">${formatMoney(order.total)}</h2>
                     </div>
-                    <span className={`orders-page__status orders-page__status--${order.status}`}>
-                      {formatStatus(order.status)}
-                    </span>
+                    <div className="orders-page__status-stack">
+                      <span className={`orders-page__status orders-page__status--${order.status}`}>
+                        {formatStatus(order.status)}
+                      </span>
+                      <span className={`orders-page__payment orders-page__payment--${order.payment_status}`}>
+                        <CreditCard size={12} />
+                        {formatStatus(order.payment_status)}
+                      </span>
+                    </div>
                   </div>
 
                   <div className="orders-page__meta">
