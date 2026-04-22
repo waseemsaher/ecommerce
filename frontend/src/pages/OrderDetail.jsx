@@ -133,7 +133,7 @@ export default function OrderDetail() {
             <Package size={44} />
             <h2>Order not found</h2>
             <p>{apiMessage || 'The order you requested does not exist or cannot be loaded.'}</p>
-            {apiStatus ? <p>HTTP status: {apiStatus}</p> : null}
+            {apiStatus ? <p>Please try again in a moment.</p> : null}
             <div className="order-detail__error-actions">
               <Button variant="secondary" icon={RefreshCw} onClick={() => refetch()}>
                 Retry
@@ -201,10 +201,6 @@ export default function OrderDetail() {
 
               <div className="order-detail__payment-grid">
                 <div>
-                  <span>Transaction ID</span>
-                  <strong>{order.payment.transaction_id || 'Pending'}</strong>
-                </div>
-                <div>
                   <span>Amount</span>
                   <strong>${formatMoney(order.payment.amount)}</strong>
                 </div>
@@ -217,13 +213,6 @@ export default function OrderDetail() {
                   <strong>{formatStatus(order.payment.method)}</strong>
                 </div>
               </div>
-
-              {order.status === 'processing' && (
-                <div className="order-detail__payment-note">
-                  <RefreshCw size={14} />
-                  We are polling for payment updates every few seconds until the order is completed.
-                </div>
-              )}
 
               {canPay && stripePromise && (
                 <div className="order-detail__paybox">
@@ -302,9 +291,6 @@ export default function OrderDetail() {
                 <div><span>Tax</span><strong>${formatMoney(order.tax)}</strong></div>
                 <div className="order-detail__rows-total"><span>Total</span><strong>${formatMoney(order.total)}</strong></div>
               </div>
-              <p className="order-detail__note">
-                This order was created from the cart checkout flow and uses the backend totals.
-              </p>
               <Link to="/products">
                 <Button fullWidth icon={Package}>Continue shopping</Button>
               </Link>

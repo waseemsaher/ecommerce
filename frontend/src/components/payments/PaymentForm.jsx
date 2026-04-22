@@ -71,7 +71,7 @@ export default function PaymentForm({ clientSecret, orderNumber, onSuccess, onEr
     event.preventDefault();
 
     if (!stripe || !elements) {
-      setLocalError('Stripe has not finished loading yet.');
+      setLocalError('Payment is still loading. Please try again.');
       return;
     }
 
@@ -101,7 +101,7 @@ export default function PaymentForm({ clientSecret, orderNumber, onSuccess, onEr
         const currentIntent = current?.paymentIntent;
 
         if (['succeeded', 'processing', 'requires_capture'].includes(currentIntent?.status)) {
-          setSuccessMessage('Payment already confirmed. Waiting for order confirmation.');
+          setSuccessMessage('Payment already confirmed. Finalizing your order.');
           onSuccess?.(currentIntent);
           setLoading(false);
           return;
@@ -122,11 +122,11 @@ export default function PaymentForm({ clientSecret, orderNumber, onSuccess, onEr
     }
 
     if (result.paymentIntent?.status === 'succeeded') {
-      setSuccessMessage('Payment submitted successfully. Waiting for order confirmation.');
+      setSuccessMessage('Payment submitted successfully. Finalizing your order.');
       onSuccess?.(result.paymentIntent);
     } else {
-      setLocalError(`Payment intent status: ${result.paymentIntent?.status || 'unknown'}`);
-      onError?.(`Payment intent status: ${result.paymentIntent?.status || 'unknown'}`);
+      setLocalError('Payment could not be confirmed yet. Please try again.');
+      onError?.('Payment could not be confirmed yet. Please try again.');
     }
 
     setLoading(false);
@@ -143,8 +143,7 @@ export default function PaymentForm({ clientSecret, orderNumber, onSuccess, onEr
 
       <div className="payment-form__hint">
         <ShieldCheck size={14} />
-        Use Stripe test card <strong>4242 4242 4242 4242</strong>, any future expiry,
-        any CVC, and any ZIP.
+        Your payment details are secured and encrypted by Stripe.
       </div>
 
       {localError && (

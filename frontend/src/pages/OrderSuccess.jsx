@@ -40,7 +40,7 @@ export default function OrderSuccess() {
               <CircleCheckBig size={54} />
             </div>
             <h1>Payment received</h1>
-            <p>The order id in this link is invalid.</p>
+            <p>The order link is invalid.</p>
             <div className="order-success__actions">
               <Button variant="secondary" onClick={() => navigate('/orders')} icon={ReceiptText}>
                 Back to orders
@@ -78,7 +78,7 @@ export default function OrderSuccess() {
             </div>
             <h1>Payment received</h1>
             <p>
-              We could not load the order confirmation yet. It may still be syncing with Stripe.
+              We could not load your order confirmation yet. Please try again in a moment.
             </p>
             <div className="order-success__actions">
               <Link to={`/orders/${id}`}>
@@ -105,7 +105,7 @@ export default function OrderSuccess() {
           <p>
             {order.status === 'completed' || order.payment_status === 'paid'
               ? 'Your order has been confirmed successfully. You can review the final details or continue shopping.'
-              : 'Your payment was accepted. We are waiting for the final order confirmation from the backend.'}
+              : 'Your payment was accepted. We are finalizing your order confirmation.'}
           </p>
           <p className="order-success__meta">
             Order ID: {order.order_number || id}

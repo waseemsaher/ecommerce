@@ -101,7 +101,7 @@ export default function Orders() {
             {nextCursor && (
               <div className="orders-page__more">
                 <Button variant="secondary" disabled>
-                  More orders available in API cursor results
+                  More orders are available
                 </Button>
               </div>
             )}
