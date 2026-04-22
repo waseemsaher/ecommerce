@@ -129,14 +129,26 @@
 }
 
 @keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-20px); }
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
 }
 
 @keyframes orbFloat {
-  0%, 100% { transform: translate(0, 0); }
-  33% { transform: translate(20px, -30px); }
-  66% { transform: translate(-15px, 15px); }
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  33% {
+    transform: translate(20px, -30px);
+  }
+  66% {
+    transform: translate(-15px, 15px);
+  }
 }
 
 @keyframes fadeSlideUp {

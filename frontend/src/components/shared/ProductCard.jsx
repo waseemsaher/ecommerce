@@ -1,9 +1,11 @@
 import './ProductCard.css';
-import { Link } from 'react-router-dom';
-import { ShoppingCart, Package, Check } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { ShoppingCart, Package, Check, CreditCard } from 'lucide-react';
 import { useState } from 'react';
+import { motion } from 'framer-motion';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { addToCart } from '../../api/cart';
+import { buyNow } from '../../api/orders';
 import useAuthStore from '../../store/authStore';
 import useCartStore from '../../store/cartStore';
 import toast from 'react-hot-toast';
@@ -11,6 +13,7 @@ import Badge from '../ui/Badge';
 import { getProductImageUrl } from '../../utils/productImage';
 
 export default function ProductCard({ product }) {
+  const navigate = useNavigate();
   const { isAuthenticated } = useAuthStore();
   const incrementCount = useCartStore((s) => s.incrementCount);
   const queryClient = useQueryClient();
@@ -43,6 +46,46 @@ export default function ProductCard({ product }) {
       return;
     }
     addMutation.mutate({ product_id: product.id, quantity: 1 });
+  };
+
+  const buyNowMutation = useMutation({
+    mutationFn: ({ idempotencyKey }) => buyNow({
+      product_id: product.id,
+      quantity: 1,
+      idempotencyKey,
+    }),
+    onSuccess: (data) => {
+      const orderId = data?.data?.id;
+
+      if (orderId) {
+        toast.success('Order created. Complete payment to confirm it.');
+        navigate(`/orders/${orderId}`);
+        return;
+      }
+
+      toast.success('Order created successfully.');
+      navigate('/orders');
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || 'Failed to create order');
+    },
+  });
+
+  const handleBuyNow = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!isAuthenticated) {
+      toast.error('Please login to buy now');
+      return;
+    }
+
+    const idempotencyKey =
+      typeof crypto !== 'undefined' && crypto.randomUUID
+        ? crypto.randomUUID()
+        : `buy-now-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+    buyNowMutation.mutate({ idempotencyKey });
   };
 
   const inStock = product.stock > 0;
@@ -90,24 +133,42 @@ export default function ProductCard({ product }) {
           <span className="product-card__price">
             ${parseFloat(product.price).toFixed(2)}
           </span>
-          <button
-            className={`product-card__add-btn ${justAdded ? 'product-card__add-btn--added' : ''}`}
-            onClick={handleAddToCart}
-            disabled={!inStock || addMutation.isPending}
-            aria-label={`Add ${product.name} to cart`}
-          >
-            {justAdded ? (
-              <>
-                <Check size={16} />
-                <span>Added</span>
-              </>
-            ) : (
-              <>
-                <ShoppingCart size={16} />
-                <span>Add</span>
-              </>
-            )}
-          </button>
+          <div className="product-card__cta-group">
+            <motion.button
+              className={`product-card__add-btn ${justAdded ? 'product-card__add-btn--added' : ''}`}
+              onClick={handleAddToCart}
+              disabled={!inStock || addMutation.isPending || buyNowMutation.isPending}
+              aria-label={`Add ${product.name} to cart`}
+              whileHover={(!inStock || addMutation.isPending || buyNowMutation.isPending) ? undefined : { y: -1 }}
+              whileTap={(!inStock || addMutation.isPending || buyNowMutation.isPending) ? undefined : { scale: 0.98 }}
+              transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
+            >
+              {justAdded ? (
+                <>
+                  <Check size={16} />
+                  <span>Added</span>
+                </>
+              ) : (
+                <>
+                  <ShoppingCart size={16} />
+                  <span>Add</span>
+                </>
+              )}
+            </motion.button>
+
+            <motion.button
+              className="product-card__buy-btn"
+              onClick={handleBuyNow}
+              disabled={!inStock || addMutation.isPending || buyNowMutation.isPending}
+              aria-label={`Buy ${product.name} now`}
+              whileHover={(!inStock || addMutation.isPending || buyNowMutation.isPending) ? undefined : { y: -1 }}
+              whileTap={(!inStock || addMutation.isPending || buyNowMutation.isPending) ? undefined : { scale: 0.98 }}
+              transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <CreditCard size={15} />
+              <span>{buyNowMutation.isPending ? '...' : 'Buy'}</span>
+            </motion.button>
+          </div>
         </div>
       </div>
     </Link>

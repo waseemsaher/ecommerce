@@ -1,24 +1,36 @@
 import { CardElement, useElements, useStripe } from '@stripe/react-stripe-js';
-import { useState } from 'react';
-import { AlertTriangle, CheckCircle2, Loader2, ShieldCheck } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { AlertTriangle, CheckCircle2, ShieldCheck } from 'lucide-react';
 import Button from '../ui/Button';
 
-const CARD_OPTIONS = {
-  style: {
-    base: {
-      color: '#f0f0f8',
-      fontFamily: 'Inter, system-ui, sans-serif',
-      fontSize: '16px',
-      '::placeholder': {
-        color: '#5a5a72',
+function getCssVar(name, fallback) {
+  if (typeof window === 'undefined') {
+    return fallback;
+  }
+
+  const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  return value || fallback;
+}
+
+function buildCardOptions() {
+  return {
+    style: {
+      base: {
+        color: getCssVar('--text-primary', '#0b1220'),
+        fontFamily: 'Inter, system-ui, sans-serif',
+        fontSize: '16px',
+        iconColor: getCssVar('--text-secondary', '#334155'),
+        '::placeholder': {
+          color: getCssVar('--text-muted', '#64748b'),
+        },
+      },
+      invalid: {
+        color: getCssVar('--danger', '#ff6b6b'),
       },
     },
-    invalid: {
-      color: '#ff6b6b',
-    },
-  },
-  hidePostalCode: true,
-};
+    hidePostalCode: true,
+  };
+}
 
 export default function PaymentForm({ clientSecret, orderNumber, onSuccess, onError }) {
   const stripe = useStripe();
@@ -26,6 +38,34 @@ export default function PaymentForm({ clientSecret, orderNumber, onSuccess, onEr
   const [loading, setLoading] = useState(false);
   const [localError, setLocalError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [cardOptions, setCardOptions] = useState(buildCardOptions);
+
+  useEffect(() => {
+    const updateOptions = () => {
+      setCardOptions(buildCardOptions());
+    };
+
+    updateOptions();
+
+    const observer = new MutationObserver((mutations) => {
+      const hasThemeUpdate = mutations.some(
+        (mutation) => mutation.attributeName === 'data-theme'
+      );
+
+      if (hasThemeUpdate) {
+        updateOptions();
+      }
+    });
+
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['data-theme'],
+    });
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -97,7 +137,7 @@ export default function PaymentForm({ clientSecret, orderNumber, onSuccess, onEr
       <div className="payment-form__field">
         <label className="payment-form__label">Card details</label>
         <div className="payment-form__card">
-          <CardElement options={CARD_OPTIONS} />
+          <CardElement options={cardOptions} />
         </div>
       </div>
 

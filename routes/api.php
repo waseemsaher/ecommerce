@@ -38,6 +38,8 @@ Route::prefix('v1')->group(function () {
 
     Route::middleware(['auth:sanctum', 'throttle:checkout'])
         ->group(function () {
+            Route::post('/buy-now', [OrderController::class, 'buyNow'])
+                ->middleware('idempotency');
             Route::post('/checkout', [OrderController::class, 'checkout'])
                 ->middleware('idempotency');
             Route::get('/orders', [OrderController::class, 'index']);

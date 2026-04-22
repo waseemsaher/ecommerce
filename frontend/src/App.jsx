@@ -1,10 +1,12 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
+import { AnimatePresence } from 'framer-motion';
 
 import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
 import ProtectedRoute from './components/shared/ProtectedRoute';
+import PageTransition from './components/shared/PageTransition';
 
 import Home from './pages/Home';
 import Login from './pages/Login';
@@ -29,59 +31,77 @@ const queryClient = new QueryClient({
   },
 });
 
+function AnimatedRoutes() {
+  const location = useLocation();
+
+  return (
+    <AnimatePresence mode="wait" initial={false}>
+      <Routes location={location} key={location.pathname}>
+        {/* Public Routes */}
+        <Route path="/" element={<PageTransition><Home /></PageTransition>} />
+        <Route path="/login" element={<PageTransition><Login /></PageTransition>} />
+        <Route path="/register" element={<PageTransition><Register /></PageTransition>} />
+        <Route path="/forgot-password" element={<PageTransition><ForgotPassword /></PageTransition>} />
+        <Route path="/reset-password" element={<PageTransition><ResetPassword /></PageTransition>} />
+        <Route path="/products" element={<PageTransition><Products /></PageTransition>} />
+        <Route path="/products/:slug" element={<PageTransition><ProductDetail /></PageTransition>} />
+
+        {/* Protected Routes */}
+        <Route
+          path="/cart"
+          element={
+            <ProtectedRoute>
+              <PageTransition>
+                <Cart />
+              </PageTransition>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/orders"
+          element={
+            <ProtectedRoute>
+              <PageTransition>
+                <Orders />
+              </PageTransition>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/orders/:id"
+          element={
+            <ProtectedRoute>
+              <PageTransition>
+                <OrderDetail />
+              </PageTransition>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/orders/:id/success"
+          element={
+            <ProtectedRoute>
+              <PageTransition>
+                <OrderSuccess />
+              </PageTransition>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* 404 */}
+        <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
+      </Routes>
+    </AnimatePresence>
+  );
+}
+
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <Header />
         <main style={{ flex: 1 }}>
-          <Routes>
-            {/* Public Routes */}
-            <Route path="/" element={<Home />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/products" element={<Products />} />
-            <Route path="/products/:slug" element={<ProductDetail />} />
-
-            {/* Protected Routes */}
-            <Route
-              path="/cart"
-              element={
-                <ProtectedRoute>
-                  <Cart />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/orders"
-              element={
-                <ProtectedRoute>
-                  <Orders />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/orders/:id"
-              element={
-                <ProtectedRoute>
-                  <OrderDetail />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/orders/:id/success"
-              element={
-                <ProtectedRoute>
-                  <OrderSuccess />
-                </ProtectedRoute>
-              }
-            />
-
-            {/* 404 */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <AnimatedRoutes />
         </main>
         <Footer />
 
@@ -91,24 +111,24 @@ export default function App() {
           toastOptions={{
             duration: 3000,
             style: {
-              background: '#1c1c2b',
-              color: '#f0f0f8',
-              border: '1px solid #222235',
+              background: 'var(--bg-elevated)',
+              color: 'var(--text-primary)',
+              border: '1px solid var(--border)',
               borderRadius: '0.625rem',
               fontSize: '0.8125rem',
               padding: '12px 16px',
-              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)',
+              boxShadow: 'var(--shadow-md)',
             },
             success: {
               iconTheme: {
-                primary: '#00d68f',
-                secondary: '#1c1c2b',
+                primary: 'var(--success)',
+                secondary: 'var(--bg-elevated)',
               },
             },
             error: {
               iconTheme: {
-                primary: '#ff6b6b',
-                secondary: '#1c1c2b',
+                primary: 'var(--danger)',
+                secondary: 'var(--bg-elevated)',
               },
             },
           }}

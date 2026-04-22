@@ -126,4 +126,47 @@ class CheckoutTest extends TestCase
 
         $this->assertSame(1, Order::count());
     }
+
+    public function test_buy_now_creates_order_without_cart(): void
+    {
+        Event::fake([OrderPlaced::class]);
+
+        $user = User::factory()->create();
+        $product = Product::factory()->create([
+            'price' => 45.50,
+            'stock' => 6,
+        ]);
+
+        $response = $this->actingAs($user)
+            ->withHeader('Idempotency-Key', 'buy-now-1')
+            ->postJson('/api/v1/buy-now', [
+                'product_id' => $product->id,
+                'quantity' => 2,
+            ]);
+
+        $response->assertCreated()
+            ->assertJsonPath('data.status', 'processing')
+            ->assertJsonPath('data.payment_status', 'pending')
+            ->assertJsonPath('data.items.0.product.id', $product->id)
+            ->assertJsonPath('data.items.0.quantity', 2);
+
+        $this->assertDatabaseCount('orders', 1);
+        $this->assertDatabaseHas('order_items', [
+            'product_id' => $product->id,
+            'quantity' => 2,
+            'price' => '45.50',
+            'total' => '91.00',
+        ]);
+        $this->assertDatabaseHas('products', [
+            'id' => $product->id,
+            'stock' => 4,
+        ]);
+        $this->assertDatabaseHas('payments', [
+            'order_id' => $response->json('data.id'),
+            'method' => 'stripe',
+            'status' => 'pending',
+        ]);
+
+        Event::assertDispatched(OrderPlaced::class);
+    }
 }

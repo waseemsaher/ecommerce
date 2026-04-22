@@ -273,7 +273,7 @@
 .order-detail__paybox {
   margin-top: var(--space-5);
   padding: var(--space-5);
-  background: rgba(18, 18, 30, 0.85);
+  background: color-mix(in srgb, var(--bg-card) 84%, transparent);
   border: 1px solid var(--border);
   border-radius: var(--radius-xl);
 }
@@ -308,9 +308,18 @@
 
 .payment-form__card {
   padding: var(--space-4);
-  background: var(--bg-card);
+  background: color-mix(in srgb, var(--bg-card) 70%, transparent);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
+}
+
+:root[data-theme="light"] .order-detail__paybox {
+  background: rgba(255, 255, 255, 0.7);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+:root[data-theme="light"] .payment-form__card {
+  background: rgba(255, 255, 255, 0.55);
 }
 
 .payment-form__hint {

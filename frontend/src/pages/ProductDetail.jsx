@@ -1,12 +1,13 @@
 import '../styles/pages/ProductDetail.css';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getProduct } from '../api/products';
 import { addToCart } from '../api/cart';
+import { buyNow } from '../api/orders';
 import { useState } from 'react';
 import {
   ShoppingCart, Minus, Plus, ChevronLeft, Package,
-  Check, AlertTriangle,
+  Check, AlertTriangle, CreditCard,
 } from 'lucide-react';
 import Button from '../components/ui/Button';
 import Badge from '../components/ui/Badge';
@@ -18,6 +19,7 @@ import { getProductImageUrl } from '../utils/productImage';
 
 export default function ProductDetail() {
   const { slug } = useParams();
+  const navigate = useNavigate();
   const { isAuthenticated } = useAuthStore();
   const queryClient = useQueryClient();
   const [quantity, setQuantity] = useState(1);
@@ -46,12 +48,53 @@ export default function ProductDetail() {
     },
   });
 
+  const buyNowMutation = useMutation({
+    mutationFn: ({ productId, requestedQuantity, idempotencyKey }) => buyNow({
+      product_id: productId,
+      quantity: requestedQuantity,
+      idempotencyKey,
+    }),
+    onSuccess: (data) => {
+      const orderId = data?.data?.id;
+
+      if (orderId) {
+        toast.success('Order created. Complete payment to confirm it.');
+        navigate(`/orders/${orderId}`);
+        return;
+      }
+
+      toast.success('Order created successfully.');
+      navigate('/orders');
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || 'Failed to create order');
+    },
+  });
+
   const handleAddToCart = () => {
     if (!isAuthenticated) {
       toast.error('Please login to add items to cart');
       return;
     }
     addMutation.mutate({ product_id: product.id, quantity });
+  };
+
+  const handleBuyNow = () => {
+    if (!isAuthenticated) {
+      toast.error('Please login to buy now');
+      return;
+    }
+
+    const idempotencyKey =
+      typeof crypto !== 'undefined' && crypto.randomUUID
+        ? crypto.randomUUID()
+        : `buy-now-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+    buyNowMutation.mutate({
+      productId: product.id,
+      requestedQuantity: quantity,
+      idempotencyKey,
+    });
   };
 
   if (isLoading) {
@@ -174,17 +217,31 @@ export default function ProductDetail() {
                 </button>
               </div>
 
-              <Button
-                size="lg"
-                fullWidth
-                icon={justAdded ? Check : ShoppingCart}
-                onClick={handleAddToCart}
-                disabled={!inStock || addMutation.isPending}
-                loading={addMutation.isPending}
-                className={justAdded ? 'product-detail__added-btn' : ''}
-              >
-                {justAdded ? 'Added to Cart!' : 'Add to Cart'}
-              </Button>
+              <div className="product-detail__cta-group">
+                <Button
+                  size="lg"
+                  fullWidth
+                  icon={justAdded ? Check : ShoppingCart}
+                  onClick={handleAddToCart}
+                  disabled={!inStock || addMutation.isPending || buyNowMutation.isPending}
+                  loading={addMutation.isPending}
+                  className={justAdded ? 'product-detail__added-btn' : ''}
+                >
+                  {justAdded ? 'Added to Cart!' : 'Add to Cart'}
+                </Button>
+
+                <Button
+                  size="lg"
+                  fullWidth
+                  variant="secondary"
+                  icon={CreditCard}
+                  onClick={handleBuyNow}
+                  disabled={!inStock || buyNowMutation.isPending || addMutation.isPending}
+                  loading={buyNowMutation.isPending}
+                >
+                  Buy Now
+                </Button>
+              </div>
             </div>
 
             {/* Meta */}

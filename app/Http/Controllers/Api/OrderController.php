@@ -2,18 +2,38 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Actions\Order\CreateOrderFromProductAction;
 use App\Actions\Order\CreateOrderAction;
 use App\Actions\Payment\ProcessPaymentAction;
 use App\Contracts\PaymentGatewayInterface;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\BuyNowRequest;
 use App\Models\Order;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class OrderController extends Controller
 {
+    public function buyNow(
+        BuyNowRequest $request,
+        CreateOrderFromProductAction $createOrderFromProductAction,
+        ProcessPaymentAction $processPaymentAction,
+    ): JsonResponse {
+        $order = $createOrderFromProductAction->execute(
+            $request->user()->id,
+            (int) $request->validated('product_id'),
+            (int) $request->validated('quantity', 1),
+        );
+
+        $order = $processPaymentAction->execute($order, (string) $request->header('Idempotency-Key'));
+
+        return response()->json([
+            'data' => $order,
+        ], 201);
+    }
+
     public function checkout(
         Request $request,
         CreateOrderAction $createOrderAction,

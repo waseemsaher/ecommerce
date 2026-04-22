@@ -1,10 +1,12 @@
 import './Header.css';
 import { Link, useLocation } from 'react-router-dom';
-import { ShoppingCart, LogOut, User, Menu, X, Package } from 'lucide-react';
+import { ShoppingCart, LogOut, User, Menu, X, Package, Sun, Moon } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import useAuthStore from '../../store/authStore';
 import useCartStore from '../../store/cartStore';
 import { useLogout } from '../../hooks/useAuth';
+
+const THEME_KEY = 'shopvault-theme';
 
 export default function Header() {
   const { isAuthenticated, user } = useAuthStore();
@@ -13,12 +15,30 @@ export default function Header() {
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [theme, setTheme] = useState('dark');
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  useEffect(() => {
+    const savedTheme = window.localStorage.getItem(THEME_KEY);
+    const systemTheme = window.matchMedia('(prefers-color-scheme: light)').matches
+      ? 'light'
+      : 'dark';
+    const initialTheme = savedTheme === 'light' || savedTheme === 'dark'
+      ? savedTheme
+      : systemTheme;
+
+    setTheme(initialTheme);
+  }, []);
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    window.localStorage.setItem(THEME_KEY, theme);
+  }, [theme]);
 
   // Close menu on route change
   useEffect(() => {
@@ -27,6 +47,12 @@ export default function Header() {
 
   const isActive = (path) =>
     location.pathname === path || location.pathname.startsWith(`${path}/`);
+
+  const toggleTheme = () => {
+    setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
+  };
+
+  const isDark = theme === 'dark';
 
   return (
     <header className={`header ${scrolled ? 'header--scrolled' : ''}`}>
@@ -65,6 +91,15 @@ export default function Header() {
 
         {/* Actions — Desktop */}
         <div className="header__actions">
+          <button
+            className="header__theme-btn"
+            onClick={toggleTheme}
+            aria-label={isDark ? 'Switch to light theme' : 'Switch to dark theme'}
+            title={isDark ? 'Switch to light theme' : 'Switch to dark theme'}
+          >
+            {isDark ? <Sun size={18} /> : <Moon size={18} />}
+          </button>
+
           {isAuthenticated ? (
             <>
               <Link to="/cart" className="header__cart-btn" aria-label="Shopping cart">
@@ -118,6 +153,10 @@ export default function Header() {
           <Link to="/products" className="header__mobile-link">
             Products
           </Link>
+          <button className="header__mobile-link header__mobile-theme" onClick={toggleTheme}>
+            {isDark ? <Sun size={18} /> : <Moon size={18} />}
+            <span>{isDark ? 'Switch to Light Theme' : 'Switch to Dark Theme'}</span>
+          </button>
           {isAuthenticated ? (
             <>
               <Link to="/orders" className="header__mobile-link">

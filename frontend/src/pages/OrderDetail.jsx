@@ -1,6 +1,7 @@
 import '../styles/pages/Orders.css';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { useEffect, useState } from 'react';
 import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 import {
@@ -34,8 +35,32 @@ function formatStatus(value) {
 export default function OrderDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [theme, setTheme] = useState(
+    document.documentElement.getAttribute('data-theme') || 'dark'
+  );
   const numericOrderId = Number(id);
   const hasValidId = Number.isInteger(numericOrderId) && numericOrderId > 0;
+
+  useEffect(() => {
+    const observer = new MutationObserver((mutations) => {
+      const hasThemeUpdate = mutations.some(
+        (mutation) => mutation.attributeName === 'data-theme'
+      );
+
+      if (hasThemeUpdate) {
+        setTheme(document.documentElement.getAttribute('data-theme') || 'dark');
+      }
+    });
+
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['data-theme'],
+    });
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
 
   const {
     data,
@@ -211,11 +236,11 @@ export default function OrderDetail() {
                     options={{
                       clientSecret,
                       appearance: {
-                        theme: 'night',
+                        theme: theme === 'light' ? 'stripe' : 'night',
                         variables: {
                           colorPrimary: '#7c5cfc',
-                          colorText: '#f0f0f8',
-                          colorBackground: '#151520',
+                          colorText: theme === 'light' ? '#0b1220' : '#f0f0f8',
+                          colorBackground: 'transparent',
                           colorDanger: '#ff6b6b',
                           fontFamily: 'Inter, system-ui, sans-serif',
                         },

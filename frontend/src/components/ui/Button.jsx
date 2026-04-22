@@ -1,5 +1,6 @@
 import './Button.css';
 import { Loader2 } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 export default function Button({
   children,
@@ -25,7 +26,14 @@ export default function Button({
     .join(' ');
 
   return (
-    <button className={classes} disabled={disabled || loading} {...props}>
+    <motion.button
+      className={classes}
+      disabled={disabled || loading}
+      whileHover={disabled || loading ? undefined : { y: -1 }}
+      whileTap={disabled || loading ? undefined : { scale: 0.98 }}
+      transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
+      {...props}
+    >
       {loading && <Loader2 className="btn__spinner" size={16} />}
       {!loading && Icon && iconPosition === 'left' && (
         <Icon className="btn__icon" size={size === 'sm' ? 14 : 16} />
@@ -34,6 +42,6 @@ export default function Button({
       {!loading && Icon && iconPosition === 'right' && (
         <Icon className="btn__icon" size={size === 'sm' ? 14 : 16} />
       )}
-    </button>
+    </motion.button>
   );
 }
