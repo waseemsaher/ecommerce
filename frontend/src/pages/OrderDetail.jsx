@@ -36,7 +36,7 @@ export default function OrderDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [theme, setTheme] = useState(
-    document.documentElement.getAttribute('data-theme') || 'light'
+    document.documentElement.getAttribute('data-theme') || 'dark'
   );
   const numericOrderId = Number(id);
   const hasValidId = Number.isInteger(numericOrderId) && numericOrderId > 0;
@@ -48,7 +48,7 @@ export default function OrderDetail() {
       );
 
       if (hasThemeUpdate) {
-        setTheme(document.documentElement.getAttribute('data-theme') || 'light');
+        setTheme(document.documentElement.getAttribute('data-theme') || 'dark');
       }
     });
 

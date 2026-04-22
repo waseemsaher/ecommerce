@@ -15,7 +15,7 @@ export default function Header() {
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [theme, setTheme] = useState('light');
+  const [theme, setTheme] = useState('dark');
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -25,9 +25,12 @@ export default function Header() {
 
   useEffect(() => {
     const savedTheme = window.localStorage.getItem(THEME_KEY);
+    const systemTheme = window.matchMedia('(prefers-color-scheme: light)').matches
+      ? 'light'
+      : 'dark';
     const initialTheme = savedTheme === 'light' || savedTheme === 'dark'
       ? savedTheme
-      : 'light';
+      : systemTheme;
 
     setTheme(initialTheme);
   }, []);
