@@ -1,11 +1,13 @@
 import '../styles/pages/Orders.css';
 import { Link, useParams, useNavigate } from 'react-router-dom';
+import { usePageTitle } from '../hooks/usePageTitle';
 import { useQuery } from '@tanstack/react-query';
 import { CircleCheckBig, ReceiptText, ShoppingBag, RefreshCw } from 'lucide-react';
 import { getOrder } from '../api/orders';
 import Button from '../components/ui/Button';
 
 export default function OrderSuccess() {
+  usePageTitle('Order Confirmed');
   const { id } = useParams();
   const navigate = useNavigate();
   const numericOrderId = Number(id);

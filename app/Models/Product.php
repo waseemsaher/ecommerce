@@ -41,6 +41,19 @@ class Product extends Model
         return $max !== null ? $query->where('price', '<=', $max) : $query;
     }
 
+    /** Search by name or description */
+    public function scopeSearch(Builder $query, ?string $term): Builder
+    {
+        if (! $term) {
+            return $query;
+        }
+
+        return $query->where(function (Builder $q) use ($term): void {
+            $q->where('name', 'like', '%'.$term.'%')
+              ->orWhere('description', 'like', '%'.$term.'%');
+        });
+    }
+
     /**
      * Apply sort — WHITELISTED only (never raw input into ORDER BY)
      * Supported: price_asc | price_desc | name_asc | created_desc

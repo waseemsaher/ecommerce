@@ -43,3 +43,8 @@ export const getOrder = async (id) => {
   const { data } = await client.get(`/v1/orders/${id}`);
   return data;
 };
+
+export const cancelOrder = async (id) => {
+  const { data } = await client.post(`/v1/orders/${id}/cancel`);
+  return data;
+};

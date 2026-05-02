@@ -5,8 +5,10 @@ import { Lock, Package, ArrowLeft } from 'lucide-react';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
 import { useResetPassword } from '../hooks/useAuth';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 export default function ResetPassword() {
+  usePageTitle('Reset Password');
   const [searchParams] = useSearchParams();
   const tokenFromUrl = searchParams.get('token') || '';
   const emailFromUrl = searchParams.get('email') || '';

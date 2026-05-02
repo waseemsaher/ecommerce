@@ -1,8 +1,9 @@
 import '../styles/pages/Orders.css';
-import { useMemo } from 'react';
+import { useState } from 'react';
+import { usePageTitle } from '../hooks/usePageTitle';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Clock3, Package, ChevronRight, ReceiptText, CreditCard } from 'lucide-react';
+import { Clock3, Package, ChevronRight, ReceiptText, CreditCard, ChevronDown } from 'lucide-react';
 import { getOrders } from '../api/orders';
 import Button from '../components/ui/Button';
 import { Skeleton } from '../components/ui/Skeleton';
@@ -16,18 +17,41 @@ function formatStatus(value) {
 }
 
 export default function Orders() {
-  const { data, isLoading } = useQuery({
-    queryKey: ['orders'],
-    queryFn: () => getOrders(),
+  usePageTitle('My Orders');
+  const [cursor, setCursor] = useState(null);
+  const [allOrders, setAllOrders] = useState([]);
+
+  const { data, isLoading, isFetching } = useQuery({
+    queryKey: ['orders', cursor],
+    queryFn: () => getOrders({ cursor }),
     staleTime: 0,
-    refetchInterval: 5000,
     refetchOnWindowFocus: true,
+    refetchInterval: (query) => {
+      const orders = query.state.data?.data;
+      if (!orders) return false;
+      const hasActive = orders.some((o) =>
+        ['pending', 'processing'].includes(o.status)
+      );
+      return hasActive ? 5000 : false;
+    },
+    onSuccess: (incoming) => {
+      setAllOrders((prev) =>
+        cursor === null
+          ? incoming.data || []
+          : [...prev, ...(incoming.data || [])]
+      );
+    },
   });
 
-  const orders = data?.data || [];
+  // Merge in pages that come back (handles both first load and load-more)
+  const pageOrders = data?.data || [];
+  const displayOrders = cursor === null ? pageOrders : allOrders;
   const nextCursor = data?.meta?.next_cursor || null;
 
-  const latestOrder = useMemo(() => orders[0], [orders]);
+  const handleLoadMore = () => {
+    setAllOrders((prev) => [...prev, ...pageOrders]);
+    setCursor(nextCursor);
+  };
 
   return (
     <div className="orders-page page-enter">
@@ -38,8 +62,8 @@ export default function Orders() {
             <p className="orders-page__subtitle">Review your recent purchases and track totals.</p>
           </div>
 
-          {latestOrder && (
-            <Link to={`/orders/${latestOrder.id}`} className="orders-page__latest-link">
+          {displayOrders.length > 0 && (
+            <Link to={`/orders/${displayOrders[0].id}`} className="orders-page__latest-link">
               View latest order
               <ChevronRight size={16} />
             </Link>
@@ -56,7 +80,7 @@ export default function Orders() {
               </div>
             ))}
           </div>
-        ) : orders.length === 0 ? (
+        ) : displayOrders.length === 0 ? (
           <div className="orders-page__empty glass">
             <ReceiptText size={44} />
             <h2>No orders yet</h2>
@@ -68,7 +92,7 @@ export default function Orders() {
         ) : (
           <>
             <div className="orders-page__list">
-              {orders.map((order) => (
+              {displayOrders.map((order) => (
                 <Link key={order.id} to={`/orders/${order.id}`} className="orders-page__card glass">
                   <div className="orders-page__card-top">
                     <div>
@@ -100,8 +124,13 @@ export default function Orders() {
 
             {nextCursor && (
               <div className="orders-page__more">
-                <Button variant="secondary" disabled>
-                  More orders are available
+                <Button
+                  variant="secondary"
+                  icon={ChevronDown}
+                  loading={isFetching}
+                  onClick={handleLoadMore}
+                >
+                  Load more orders
                 </Button>
               </div>
             )}

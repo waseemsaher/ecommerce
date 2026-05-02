@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
 import toast from 'react-hot-toast';
 import * as authApi from '../api/auth';
 import useAuthStore from '../store/authStore';
@@ -23,6 +24,27 @@ function getApiErrorMessage(error, fallbackMessage) {
   }
 
   return apiMessage || fallbackMessage;
+}
+
+/** Listen for the auth:logout event dispatched by the Axios interceptor on 401 */
+export function useAutoLogout() {
+  const { clearAuth } = useAuthStore();
+  const resetCount = useCartStore((s) => s.resetCount);
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const handler = () => {
+      clearAuth();
+      resetCount();
+      queryClient.clear();
+      toast.error('Session expired. Please sign in again.');
+      navigate('/login');
+    };
+
+    window.addEventListener('auth:logout', handler);
+    return () => window.removeEventListener('auth:logout', handler);
+  }, [clearAuth, resetCount, navigate, queryClient]);
 }
 
 export function useLogin() {

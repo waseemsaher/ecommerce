@@ -15,12 +15,15 @@ class ProcessPaymentAction
 {
     public function __construct(private PaymentGatewayInterface $gateway) {}
 
-    public function execute(Order $order, string $idempotencyKey): Order
+    /**
+     * @return array{0: Order, 1: string|null}  [freshOrder, clientSecret]
+     */
+    public function execute(Order $order, string $idempotencyKey): array
     {
         $order->loadMissing('items.product', 'payment', 'user');
 
         if ($order->payment) {
-            return $order->fresh(['items.product', 'payment', 'user']);
+            return [$order->fresh(['items.product', 'payment', 'user']), null];
         }
 
         try {
@@ -37,7 +40,10 @@ class ProcessPaymentAction
             throw new PaymentProcessingException($throwable->getMessage());
         }
 
-        return DB::transaction(function () use ($order, $result): Order {
+        // client_secret is returned to the caller (controller) but never persisted.
+        $clientSecret = $result['client_secret'] ?? null;
+
+        return DB::transaction(function () use ($order, $result, $clientSecret): array {
             $order->payment()->create([
                 'method'         => 'stripe',
                 'transaction_id' => $result['transaction_id'],
@@ -45,7 +51,6 @@ class ProcessPaymentAction
                 'currency'       => $result['currency'] ?? 'USD',
                 'status'         => PaymentStatus::Pending->value,
                 'metadata'       => array_merge($result['metadata'] ?? [], [
-                    'client_secret'  => $result['client_secret'],
                     'gateway_status' => $result['status'],
                 ]),
             ]);
@@ -57,7 +62,7 @@ class ProcessPaymentAction
 
             event(new OrderPlaced($order->fresh(['items.product', 'payment', 'user'])));
 
-            return $order->fresh(['items.product', 'payment', 'user']);
+            return [$order->fresh(['items.product', 'payment', 'user']), $clientSecret];
         });
     }
 

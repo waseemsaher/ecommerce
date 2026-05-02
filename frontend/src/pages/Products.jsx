@@ -1,5 +1,6 @@
 import '../styles/pages/Products.css';
 import { useState } from 'react';
+import { usePageTitle } from '../hooks/usePageTitle';
 import { useQuery } from '@tanstack/react-query';
 import { getProducts } from '../api/products';
 import ProductCard from '../components/shared/ProductCard';
@@ -8,6 +9,7 @@ import Button from '../components/ui/Button';
 import { Search, SlidersHorizontal, ChevronLeft, ChevronRight, X } from 'lucide-react';
 
 export default function Products() {
+  usePageTitle('Products');
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [showFilters, setShowFilters] = useState(false);

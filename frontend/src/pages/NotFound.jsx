@@ -2,8 +2,10 @@ import '../styles/pages/NotFound.css';
 import { Link } from 'react-router-dom';
 import { Home, ArrowLeft } from 'lucide-react';
 import Button from '../components/ui/Button';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 export default function NotFound() {
+  usePageTitle('Page Not Found');
   return (
     <div className="not-found page-enter glow-bg">
       <div className="not-found__inner">

@@ -1,13 +1,17 @@
 import '../styles/pages/Home.css';
 import { Link } from 'react-router-dom';
+import { usePageTitle } from '../hooks/usePageTitle';
 import { ArrowRight, Zap, Shield, Truck, ShoppingBag } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { getProducts } from '../api/products';
 import ProductCard from '../components/shared/ProductCard';
 import { ProductGridSkeleton } from '../components/ui/Skeleton';
 import Button from '../components/ui/Button';
+import useAuthStore from '../store/authStore';
 
 export default function Home() {
+  usePageTitle(null);
+  const isAuthenticated = useAuthStore((s) => !!s.token);
   const { data, isLoading } = useQuery({
     queryKey: ['products', { per_page: 4 }],
     queryFn: () => getProducts({ per_page: 4 }),
@@ -38,11 +42,13 @@ export default function Home() {
                   Browse Collection
                 </Button>
               </Link>
-              <Link to="/register">
-                <Button variant="secondary" size="lg" icon={ArrowRight} iconPosition="right">
-                  Create Account
-                </Button>
-              </Link>
+              {!isAuthenticated && (
+                <Link to="/register">
+                  <Button variant="secondary" size="lg" icon={ArrowRight} iconPosition="right">
+                    Create Account
+                  </Button>
+                </Link>
+              )}
             </div>
           </div>
 
@@ -114,19 +120,21 @@ export default function Home() {
       </section>
 
       {/* ── CTA ───────────────────────────────────────────────── */}
-      <section className="cta glow-bg">
-        <div className="cta__inner container">
-          <h2 className="cta__title">Ready to start shopping?</h2>
-          <p className="cta__subtitle">
-            Create an account and explore our full collection today.
-          </p>
-          <Link to="/register">
-            <Button size="lg" icon={ArrowRight} iconPosition="right">
-              Get Started Free
-            </Button>
-          </Link>
-        </div>
-      </section>
+      {!isAuthenticated && (
+        <section className="cta glow-bg">
+          <div className="cta__inner container">
+            <h2 className="cta__title">Ready to start shopping?</h2>
+            <p className="cta__subtitle">
+              Create an account and explore our full collection today.
+            </p>
+            <Link to="/register">
+              <Button size="lg" icon={ArrowRight} iconPosition="right">
+                Get Started Free
+              </Button>
+            </Link>
+          </div>
+        </section>
+      )}
     </div>
   );
 }

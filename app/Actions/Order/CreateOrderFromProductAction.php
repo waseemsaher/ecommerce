@@ -28,6 +28,8 @@ class CreateOrderFromProductAction
             }
 
             $lineTotal = (float) $product->price * $quantity;
+            $tax       = $lineTotal * 0.10;
+            $total     = $lineTotal + $tax;
 
             $order = Order::create([
                 'user_id'        => $userId,
@@ -35,8 +37,8 @@ class CreateOrderFromProductAction
                 'status'         => OrderStatus::Pending,
                 'payment_status' => PaymentStatus::Pending,
                 'subtotal'       => number_format($lineTotal, 2, '.', ''),
-                'tax'            => number_format(0, 2, '.', ''),
-                'total'          => number_format($lineTotal, 2, '.', ''),
+                'tax'            => number_format($tax, 2, '.', ''),
+                'total'          => number_format($total, 2, '.', ''),
             ]);
 
             OrderItem::create([

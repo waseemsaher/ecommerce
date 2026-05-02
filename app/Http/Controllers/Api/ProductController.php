@@ -18,6 +18,7 @@ class ProductController extends Controller
         $validated = $request->validated();
 
         $paginator = Product::query()
+            ->search($validated['search'] ?? null)
             ->active($validated['is_active'] ?? null)
             ->minPrice($validated['min_price'] ?? null)
             ->maxPrice($validated['max_price'] ?? null)

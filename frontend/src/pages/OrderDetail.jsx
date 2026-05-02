@@ -1,7 +1,9 @@
 import '../styles/pages/Orders.css';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { usePageTitle } from '../hooks/usePageTitle';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
 import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 import {
@@ -13,8 +15,9 @@ import {
   Clock3,
   CreditCard,
   RefreshCw,
+  XCircle,
 } from 'lucide-react';
-import { getOrder } from '../api/orders';
+import { getOrder, cancelOrder } from '../api/orders';
 import Button from '../components/ui/Button';
 import { Skeleton } from '../components/ui/Skeleton';
 import { getProductImageUrl } from '../utils/productImage';
@@ -62,6 +65,8 @@ export default function OrderDetail() {
     };
   }, []);
 
+  const queryClient = useQueryClient();
+
   const {
     data,
     isLoading,
@@ -85,9 +90,30 @@ export default function OrderDetail() {
     },
   });
 
+  const cancelMutation = useMutation({
+    mutationFn: () => cancelOrder(numericOrderId),
+    onSuccess: () => {
+      toast.success('Order cancelled.');
+      queryClient.invalidateQueries({ queryKey: ['order', id] });
+      queryClient.invalidateQueries({ queryKey: ['orders'] });
+    },
+    onError: (err) => {
+      toast.error(err?.response?.data?.message || 'Could not cancel order.');
+    },
+  });
+
   const order = data?.data;
+  usePageTitle(order ? `Order ${order.order_number}` : 'Order Details');
   const apiMessage = error?.response?.data?.message;
   const apiStatus = error?.response?.status;
+
+  // client_secret is only present on the initial creation response (never stored in DB).
+  // We keep it in sessionStorage so it survives refetches on this page.
+  const secretStorageKey = `cs_order_${id}`;
+  if (order?.client_secret) {
+    sessionStorage.setItem(secretStorageKey, order.client_secret);
+  }
+  const clientSecret = order?.client_secret || sessionStorage.getItem(secretStorageKey) || null;
 
   if (!hasValidId) {
     return (
@@ -149,7 +175,6 @@ export default function OrderDetail() {
   }
 
   const items = order.items || [];
-  const clientSecret = order.payment?.metadata?.client_secret;
   const canPay = order.status === 'processing' && order.payment_status === 'pending' && clientSecret;
 
   return (
@@ -166,9 +191,27 @@ export default function OrderDetail() {
               <span className="orders-page__number">{order.order_number}</span>
               <h1 className="order-detail__title">Order details</h1>
             </div>
-            <span className={`orders-page__status orders-page__status--${order.status}`}>
-              {formatStatus(order.status)}
-            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+              <span className={`orders-page__status orders-page__status--${order.status}`}>
+                {formatStatus(order.status)}
+              </span>
+              {['pending', 'processing'].includes(order.status) && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  icon={XCircle}
+                  loading={cancelMutation.isPending}
+                  onClick={() => {
+                    if (window.confirm('Are you sure you want to cancel this order?')) {
+                      cancelMutation.mutate();
+                    }
+                  }}
+                  style={{ color: 'var(--danger)' }}
+                >
+                  Cancel Order
+                </Button>
+              )}
+            </div>
           </div>
 
           <div className="order-detail__timeline">
@@ -240,6 +283,7 @@ export default function OrderDetail() {
                       clientSecret={clientSecret}
                       orderNumber={order.order_number}
                       onSuccess={() => {
+                        sessionStorage.removeItem(secretStorageKey);
                         navigate(`/orders/${order.id}/success`);
                       }}
                     />

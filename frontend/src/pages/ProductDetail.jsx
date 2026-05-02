@@ -1,5 +1,6 @@
 import '../styles/pages/ProductDetail.css';
 import { useParams, Link, useNavigate } from 'react-router-dom';
+import { usePageTitle } from '../hooks/usePageTitle';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getProduct } from '../api/products';
 import { addToCart } from '../api/cart';
@@ -31,6 +32,7 @@ export default function ProductDetail() {
   });
 
   const product = data?.data;
+  usePageTitle(product?.name ?? 'Product');
 
   const addMutation = useMutation({
     mutationFn: addToCart,

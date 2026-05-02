@@ -34,3 +34,13 @@ export const resetPassword = async ({ token, email, password, password_confirmat
   });
   return data;
 };
+
+export const getUser = async () => {
+  const { data } = await client.get('/auth/user');
+  return data;
+};
+
+export const updateProfile = async (payload) => {
+  const { data } = await client.put('/auth/user', payload);
+  return data;
+};

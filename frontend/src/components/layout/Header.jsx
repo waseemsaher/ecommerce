@@ -1,6 +1,6 @@
 import './Header.css';
 import { Link, useLocation } from 'react-router-dom';
-import { ShoppingCart, LogOut, User, Menu, X, Package, Sun, Moon } from 'lucide-react';
+import { ShoppingCart, LogOut, User, Menu, X, Package, Sun, Moon, Settings } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import useAuthStore from '../../store/authStore';
 import useCartStore from '../../store/cartStore';
@@ -115,6 +115,10 @@ export default function Header() {
                   <span className="header__user-name">{user?.name?.split(' ')[0]}</span>
                 </button>
                 <div className="header__dropdown">
+                  <Link to="/profile" className="header__dropdown-item">
+                    <Settings size={16} />
+                    <span>Profile</span>
+                  </Link>
                   <button
                     className="header__dropdown-item header__dropdown-item--danger"
                     onClick={() => logoutMutation.mutate()}
@@ -164,6 +168,9 @@ export default function Header() {
               </Link>
               <Link to="/cart" className="header__mobile-link">
                 Cart {itemCount > 0 && `(${itemCount})`}
+              </Link>
+              <Link to="/profile" className="header__mobile-link">
+                Profile
               </Link>
               <button
                 className="header__mobile-link header__mobile-link--danger"

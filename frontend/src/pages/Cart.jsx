@@ -1,4 +1,5 @@
 import '../styles/pages/Cart.css';
+import { usePageTitle } from '../hooks/usePageTitle';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getCart, updateCartItem, removeCartItem, clearCart } from '../api/cart';
 import { checkout } from '../api/orders';
@@ -11,7 +12,7 @@ import Button from '../components/ui/Button';
 import { Skeleton } from '../components/ui/Skeleton';
 import useCartStore from '../store/cartStore';
 import toast from 'react-hot-toast';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getProductImageUrl } from '../utils/productImage';
 
@@ -40,19 +41,20 @@ function getItemSubtotal(item) {
 }
 
 export default function Cart() {
+  usePageTitle('Shopping Cart');
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const setItemCount = useCartStore((s) => s.setItemCount);
   const [removingId, setRemovingId] = useState(null);
   const [updatingId, setUpdatingId] = useState(null);
   const [checkoutError, setCheckoutError] = useState('');
-  const idempotencyKey = useMemo(() => {
+
+  const generateIdempotencyKey = () => {
     if (typeof crypto !== 'undefined' && crypto.randomUUID) {
       return crypto.randomUUID();
     }
-
     return `checkout-${Date.now()}-${Math.random().toString(16).slice(2)}`;
-  }, []);
+  };
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['cart'],
@@ -67,8 +69,8 @@ export default function Cart() {
   const cartData = data?.data;
   const items = normalizeCartItems(cartData);
   const subtotal = items.reduce((total, item) => total + getItemSubtotal(item), 0);
-  const tax = subtotal * 0.1;
-  const total = subtotal + tax;
+  const tax = subtotal * 0.10;
+  const total = subtotal + tax; // preview only; authoritative total comes from the backend on checkout
 
   // ── Update Quantity ────────────────────────────────────────
   const updateMutation = useMutation({
@@ -117,7 +119,7 @@ export default function Cart() {
   });
 
   const checkoutMutation = useMutation({
-    mutationFn: () => checkout({ idempotencyKey }),
+    mutationFn: () => checkout({ idempotencyKey: generateIdempotencyKey() }),
     onMutate: () => setCheckoutError(''),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['cart'] });
@@ -326,7 +328,7 @@ export default function Cart() {
                 <span>${tax.toFixed(2)}</span>
               </div>
               <div className="cart-summary__row cart-summary__row--total">
-                <span>Total</span>
+                <span>Estimated Total</span>
                 <span>${total.toFixed(2)}</span>
               </div>
             </div>

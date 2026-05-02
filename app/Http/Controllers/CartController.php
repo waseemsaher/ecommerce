@@ -56,7 +56,9 @@ class CartController extends Controller
     {
         $action->execute($request->user()->id, $productId);
 
-        return response()->json(['message' => 'Item removed']);
+        $items = $this->cache->remember($request->user()->id);
+
+        return response()->json(['data' => $items]);
     }
 
     // DELETE /cart
@@ -64,6 +66,6 @@ class CartController extends Controller
     {
         $action->execute($request->user()->id);
 
-        return response()->json(['message' => 'Cart cleared']);
+        return response()->json(['data' => []]);
     }
 }

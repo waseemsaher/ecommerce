@@ -49,7 +49,8 @@ class CreateOrderAction
                     ->first();
 
                 if (! $product || $product->stock < $cartItem->quantity) {
-                    throw new InsufficientStockException(
+
+                throw new InsufficientStockException(
                         sprintf('Insufficient stock for %s.', $product?->name ?? 'the selected product')
                     );
                 }
@@ -69,10 +70,13 @@ class CreateOrderAction
                 $product->decrement('stock', $cartItem->quantity);
             }
 
+            $tax   = $subtotal * 0.10;
+            $total = $subtotal + $tax;
+
             $order->update([
                 'subtotal' => number_format($subtotal, 2, '.', ''),
-                'tax'      => number_format(0, 2, '.', ''),
-                'total'    => number_format($subtotal, 2, '.', ''),
+                'tax'      => number_format($tax, 2, '.', ''),
+                'total'    => number_format($total, 2, '.', ''),
             ]);
 
             $cart->items()->delete();

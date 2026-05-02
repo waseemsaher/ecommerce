@@ -2,11 +2,13 @@ import '../styles/pages/Auth.css';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Mail, Lock, User, Package } from 'lucide-react';
+import { usePageTitle } from '../hooks/usePageTitle';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
 import { useRegister } from '../hooks/useAuth';
 
 export default function Register() {
+  usePageTitle('Create Account');
   const [form, setForm] = useState({
     name: '',
     email: '',

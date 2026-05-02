@@ -27,25 +27,27 @@ class OrderController extends Controller
             (int) $request->validated('quantity', 1),
         );
 
-        $order = $processPaymentAction->execute($order, (string) $request->header('Idempotency-Key'));
+        [$order, $clientSecret] = $processPaymentAction->execute($order, (string) $request->header('Idempotency-Key'));
 
-        return response()->json([
-            'data' => $order,
-        ], 201);
+        $data = $order->toArray();
+        $data['client_secret'] = $clientSecret;
+
+        return response()->json(['data' => $data], 201);
     }
 
     public function checkout(
         Request $request,
         CreateOrderAction $createOrderAction,
         ProcessPaymentAction $processPaymentAction,
-    ): JsonResponse
-    {
+    ): JsonResponse {
         $order = $createOrderAction->execute($request->user()->id);
-        $order = $processPaymentAction->execute($order, (string) $request->header('Idempotency-Key'));
 
-        return response()->json([
-            'data' => $order,
-        ], 201);
+        [$order, $clientSecret] = $processPaymentAction->execute($order, (string) $request->header('Idempotency-Key'));
+
+        $data = $order->toArray();
+        $data['client_secret'] = $clientSecret;
+
+        return response()->json(['data' => $data], 201);
     }
 
     public function index(Request $request): JsonResponse
@@ -56,17 +58,48 @@ class OrderController extends Controller
             ->latest('id')
             ->cursorPaginate(20);
 
-        $items = collect($orders->items())
-            ->map(fn (Order $order) => $this->reconcileOrderStatus($order, app(PaymentGatewayInterface::class)))
-            ->values()
-            ->all();
-
+        // Do NOT call Stripe on every order in the list — that causes N+1 API calls.
+        // Stripe status reconciliation happens only on the single-order detail endpoint.
         return response()->json([
-            'data' => $items,
+            'data' => $orders->items(),
             'meta' => [
                 'next_cursor' => $orders->nextCursor()?->encode(),
                 'prev_cursor' => $orders->previousCursor()?->encode(),
             ],
+        ]);
+    }
+
+    public function cancel(Request $request, int $id): JsonResponse
+    {
+        $order = $request->user()
+            ->orders()
+            ->with('items.product', 'payment')
+            ->whereKey($id)
+            ->first();
+
+        if (! $order) {
+            return response()->json(['message' => 'Order not found.'], 404);
+        }
+
+        if (! $order->status->canTransitionTo(OrderStatus::Cancelled)) {
+            return response()->json([
+                'message' => 'This order cannot be cancelled in its current state.',
+            ], 422);
+        }
+
+        // Restore stock
+        foreach ($order->items as $item) {
+            $item->product()->increment('stock', $item->quantity);
+        }
+
+        $order->update([
+            'status'         => OrderStatus::Cancelled->value,
+            'payment_status' => PaymentStatus::Failed->value,
+        ]);
+
+        return response()->json([
+            'data'    => $order->fresh(['items.product', 'payment']),
+            'message' => 'Order cancelled successfully.',
         ]);
     }
 

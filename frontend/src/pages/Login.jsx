@@ -2,11 +2,13 @@ import '../styles/pages/Auth.css';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Mail, Lock, Package } from 'lucide-react';
+import { usePageTitle } from '../hooks/usePageTitle';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
 import { useLogin } from '../hooks/useAuth';
 
 export default function Login() {
+  usePageTitle('Sign In');
   const [form, setForm] = useState({ email: '', password: '' });
   const [errors, setErrors] = useState({});
   const loginMutation = useLogin();

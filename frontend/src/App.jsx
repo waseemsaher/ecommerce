@@ -7,6 +7,8 @@ import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
 import ProtectedRoute from './components/shared/ProtectedRoute';
 import PageTransition from './components/shared/PageTransition';
+import ErrorBoundary from './components/shared/ErrorBoundary';
+import { useAutoLogout } from './hooks/useAuth';
 
 import Home from './pages/Home';
 import Login from './pages/Login';
@@ -19,6 +21,7 @@ import Cart from './pages/Cart';
 import Orders from './pages/Orders';
 import OrderDetail from './pages/OrderDetail';
 import OrderSuccess from './pages/OrderSuccess';
+import Profile from './pages/Profile';
 import NotFound from './pages/NotFound';
 
 const queryClient = new QueryClient({
@@ -33,6 +36,7 @@ const queryClient = new QueryClient({
 
 function AnimatedRoutes() {
   const location = useLocation();
+  useAutoLogout();
 
   return (
     <AnimatePresence mode="wait" initial={false}>
@@ -87,6 +91,16 @@ function AnimatedRoutes() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <PageTransition>
+                <Profile />
+              </PageTransition>
+            </ProtectedRoute>
+          }
+        />
 
         {/* 404 */}
         <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
@@ -99,11 +113,15 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
+        <ErrorBoundary>
         <Header />
         <main style={{ flex: 1 }}>
-          <AnimatedRoutes />
+          <ErrorBoundary>
+            <AnimatedRoutes />
+          </ErrorBoundary>
         </main>
         <Footer />
+        </ErrorBoundary>
 
         {/* Toast Notifications */}
         <Toaster
