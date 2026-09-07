@@ -122,7 +122,7 @@ class CartTest extends TestCase
         $this->actingAs($this->user)
             ->deleteJson("/api/cart/items/{$this->product->id}")
             ->assertOk()
-            ->assertJson(['message' => 'Item removed']);
+            ->assertJson(['data' => []]);
 
         $this->assertDatabaseMissing('cart_items', [
             'cart_id'    => $this->cartId(),
@@ -147,7 +147,7 @@ class CartTest extends TestCase
         $this->actingAs($this->user)
             ->deleteJson('/api/cart')
             ->assertOk()
-            ->assertJson(['message' => 'Cart cleared']);
+            ->assertJson(['data' => []]);
 
         $this->assertDatabaseCount('cart_items', 0);
     }
@@ -190,7 +190,9 @@ class CartTest extends TestCase
             ->deleteJson("/api/cart/items/{$this->product->id}")
             ->assertOk();
 
-        $this->assertFalse(Cache::has($cacheKey));
+        // Stale cache was invalidated and repopulated with updated cart data
+        $this->assertNotEquals(['stale' => 'data'], Cache::get($cacheKey));
+        $this->assertEquals([], Cache::get($cacheKey));
     }
 
     public function test_cache_is_invalidated_on_clear(): void

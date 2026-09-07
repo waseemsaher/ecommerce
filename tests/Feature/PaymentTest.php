@@ -155,7 +155,7 @@ class PaymentTest extends TestCase
         $product = Product::factory()->create(['price' => 12.00, 'stock' => 5]);
 
         $order = $this->createOrder($user, $product, 1);
-        $order = app(ProcessPaymentAction::class)->execute($order, 'pay-webhook');
+        [$order] = app(ProcessPaymentAction::class)->execute($order, 'pay-webhook');
 
         $order->payment()->update(['transaction_id' => 'pi_valid_123']);
 

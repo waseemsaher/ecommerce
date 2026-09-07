@@ -17,6 +17,8 @@ const useAuthStore = create(
       },
 
       getToken: () => get().token,
+
+      isAdmin: () => get().user?.role === 'admin',
     }),
     {
       name: 'auth-storage',

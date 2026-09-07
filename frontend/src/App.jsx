@@ -6,8 +6,10 @@ import { AnimatePresence } from 'framer-motion';
 import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
 import ProtectedRoute from './components/shared/ProtectedRoute';
+import AdminRoute from './components/shared/AdminRoute';
 import PageTransition from './components/shared/PageTransition';
 import ErrorBoundary from './components/shared/ErrorBoundary';
+import AdminLayout from './components/layout/AdminLayout';
 import { useAutoLogout } from './hooks/useAuth';
 
 import Home from './pages/Home';
@@ -22,6 +24,12 @@ import Orders from './pages/Orders';
 import OrderDetail from './pages/OrderDetail';
 import OrderSuccess from './pages/OrderSuccess';
 import Profile from './pages/Profile';
+import Dashboard from './pages/Dashboard';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminOrders from './pages/admin/AdminOrders';
+import AdminOrderDetail from './pages/admin/AdminOrderDetail';
+import AdminProducts from './pages/admin/AdminProducts';
+import AdminProductForm from './pages/admin/AdminProductForm';
 import NotFound from './pages/NotFound';
 
 const queryClient = new QueryClient({
@@ -38,74 +46,60 @@ function AnimatedRoutes() {
   const location = useLocation();
   useAutoLogout();
 
+  const isAdminRoute = location.pathname.startsWith('/admin');
+
   return (
-    <AnimatePresence mode="wait" initial={false}>
-      <Routes location={location} key={location.pathname}>
-        {/* Public Routes */}
-        <Route path="/" element={<PageTransition><Home /></PageTransition>} />
-        <Route path="/login" element={<PageTransition><Login /></PageTransition>} />
-        <Route path="/register" element={<PageTransition><Register /></PageTransition>} />
-        <Route path="/forgot-password" element={<PageTransition><ForgotPassword /></PageTransition>} />
-        <Route path="/reset-password" element={<PageTransition><ResetPassword /></PageTransition>} />
-        <Route path="/products" element={<PageTransition><Products /></PageTransition>} />
-        <Route path="/products/:slug" element={<PageTransition><ProductDetail /></PageTransition>} />
+    <>
+      {!isAdminRoute && <Header />}
+      {isAdminRoute ? (
+        <Routes location={location}>
+          <Route
+            path="/admin"
+            element={
+              <AdminRoute>
+                <AdminLayout />
+              </AdminRoute>
+            }
+          >
+            <Route index element={<AdminDashboard />} />
+            <Route path="orders" element={<AdminOrders />} />
+            <Route path="orders/:id" element={<AdminOrderDetail />} />
+            <Route path="products" element={<AdminProducts />} />
+            <Route path="products/new" element={<AdminProductForm />} />
+            <Route path="products/:id/edit" element={<AdminProductForm />} />
+          </Route>
+        </Routes>
+      ) : (
+        <main style={{ flex: 1 }}>
+          <ErrorBoundary>
+            <AnimatePresence mode="wait" initial={false}>
+              <Routes location={location} key={location.pathname}>
+                {/* Public Routes */}
+                <Route path="/" element={<PageTransition><Home /></PageTransition>} />
+                <Route path="/login" element={<PageTransition><Login /></PageTransition>} />
+                <Route path="/register" element={<PageTransition><Register /></PageTransition>} />
+                <Route path="/forgot-password" element={<PageTransition><ForgotPassword /></PageTransition>} />
+                <Route path="/reset-password" element={<PageTransition><ResetPassword /></PageTransition>} />
+                <Route path="/products" element={<PageTransition><Products /></PageTransition>} />
+                <Route path="/products/:slug" element={<PageTransition><ProductDetail /></PageTransition>} />
 
-        {/* Protected Routes */}
-        <Route
-          path="/cart"
-          element={
-            <ProtectedRoute>
-              <PageTransition>
-                <Cart />
-              </PageTransition>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/orders"
-          element={
-            <ProtectedRoute>
-              <PageTransition>
-                <Orders />
-              </PageTransition>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/orders/:id"
-          element={
-            <ProtectedRoute>
-              <PageTransition>
-                <OrderDetail />
-              </PageTransition>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/orders/:id/success"
-          element={
-            <ProtectedRoute>
-              <PageTransition>
-                <OrderSuccess />
-              </PageTransition>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/profile"
-          element={
-            <ProtectedRoute>
-              <PageTransition>
-                <Profile />
-              </PageTransition>
-            </ProtectedRoute>
-          }
-        />
+                {/* Protected Routes */}
+                <Route path="/dashboard" element={<ProtectedRoute><PageTransition><Dashboard /></PageTransition></ProtectedRoute>} />
+                <Route path="/cart" element={<ProtectedRoute><PageTransition><Cart /></PageTransition></ProtectedRoute>} />
+                <Route path="/orders" element={<ProtectedRoute><PageTransition><Orders /></PageTransition></ProtectedRoute>} />
+                <Route path="/orders/:id" element={<ProtectedRoute><PageTransition><OrderDetail /></PageTransition></ProtectedRoute>} />
+                <Route path="/orders/:id/success" element={<ProtectedRoute><PageTransition><OrderSuccess /></PageTransition></ProtectedRoute>} />
+                <Route path="/profile" element={<ProtectedRoute><PageTransition><Profile /></PageTransition></ProtectedRoute>} />
 
-        {/* 404 */}
-        <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
-      </Routes>
-    </AnimatePresence>
+                {/* 404 */}
+                <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
+              </Routes>
+            </AnimatePresence>
+          </ErrorBoundary>
+        </main>
+      )}
+      {!isAdminRoute && <Footer />}
+    </>
   );
 }
 
@@ -114,13 +108,7 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <ErrorBoundary>
-        <Header />
-        <main style={{ flex: 1 }}>
-          <ErrorBoundary>
-            <AnimatedRoutes />
-          </ErrorBoundary>
-        </main>
-        <Footer />
+          <AnimatedRoutes />
         </ErrorBoundary>
 
         {/* Toast Notifications */}

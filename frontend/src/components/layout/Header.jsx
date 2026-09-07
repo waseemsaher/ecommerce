@@ -74,6 +74,12 @@ export default function Header() {
           {isAuthenticated && (
             <>
               <Link
+                to="/dashboard"
+                className={`header__link ${isActive('/dashboard') ? 'header__link--active' : ''}`}
+              >
+                Dashboard
+              </Link>
+              <Link
                 to="/orders"
                 className={`header__link ${isActive('/orders') ? 'header__link--active' : ''}`}
               >
@@ -85,6 +91,14 @@ export default function Header() {
               >
                 Cart
               </Link>
+              {user?.role === 'admin' && (
+                <Link
+                  to="/admin"
+                  className={`header__link ${isActive('/admin') ? 'header__link--active' : ''}`}
+                >
+                  Admin
+                </Link>
+              )}
             </>
           )}
         </nav>
@@ -163,6 +177,9 @@ export default function Header() {
           </button>
           {isAuthenticated ? (
             <>
+              <Link to="/dashboard" className="header__mobile-link">
+                Dashboard
+              </Link>
               <Link to="/orders" className="header__mobile-link">
                 Orders
               </Link>
@@ -172,6 +189,11 @@ export default function Header() {
               <Link to="/profile" className="header__mobile-link">
                 Profile
               </Link>
+              {user?.role === 'admin' && (
+                <Link to="/admin" className="header__mobile-link">
+                  Admin Panel
+                </Link>
+              )}
               <button
                 className="header__mobile-link header__mobile-link--danger"
                 onClick={() => logoutMutation.mutate()}
