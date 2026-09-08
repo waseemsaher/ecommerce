@@ -58,8 +58,12 @@ export default function ProductDetail() {
     }),
     onSuccess: (data) => {
       const orderId = data?.data?.id;
+      const clientSecret = data?.data?.client_secret;
 
       if (orderId) {
+        if (clientSecret) {
+          sessionStorage.setItem(`cs_order_${orderId}`, clientSecret);
+        }
         toast.success('Order created. Complete payment to confirm it.');
         navigate(`/orders/${orderId}`);
         return;

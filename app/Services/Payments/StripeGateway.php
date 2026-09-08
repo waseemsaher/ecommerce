@@ -68,6 +68,7 @@ class StripeGateway implements PaymentGatewayInterface
         if (app()->environment('testing') || ! $this->client) {
             return [
                 'transaction_id' => $transactionId,
+                'client_secret'  => 'mock_secret_'.$transactionId,
                 'status'         => 'requires_payment_method',
                 'currency'       => null,
                 'amount'         => null,
@@ -79,6 +80,7 @@ class StripeGateway implements PaymentGatewayInterface
 
         return [
             'transaction_id' => $intent->id,
+            'client_secret'  => $intent->client_secret,
             'status'         => $intent->status,
             'currency'       => $intent->currency ? strtoupper($intent->currency) : null,
             'amount'         => $intent->amount,

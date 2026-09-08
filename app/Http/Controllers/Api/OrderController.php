@@ -117,10 +117,29 @@ class OrderController extends Controller
             ], 404);
         }
 
-        $order = $this->reconcileOrderStatus($order, app(PaymentGatewayInterface::class));
+        $gateway = app(PaymentGatewayInterface::class);
+        $order = $this->reconcileOrderStatus($order, $gateway);
+
+        $data = $order->toArray();
+
+        // If order still requires payment, provide client_secret from gateway
+        if (
+            in_array($order->status, [OrderStatus::Pending, OrderStatus::Processing], true) &&
+            $order->payment_status === PaymentStatus::Pending &&
+            $order->payment?->transaction_id
+        ) {
+            try {
+                $intent = $gateway->retrieveIntent($order->payment->transaction_id);
+                if (! empty($intent['client_secret'])) {
+                    $data['client_secret'] = $intent['client_secret'];
+                }
+            } catch (\Throwable) {
+                // Ignore gateway communication errors
+            }
+        }
 
         return response()->json([
-            'data' => $order,
+            'data' => $data,
         ]);
     }
 

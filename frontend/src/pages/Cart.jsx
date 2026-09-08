@@ -125,8 +125,12 @@ export default function Cart() {
       queryClient.invalidateQueries({ queryKey: ['cart'] });
       setItemCount(0);
       const orderId = data?.data?.id;
+      const clientSecret = data?.data?.client_secret;
 
       if (orderId) {
+        if (clientSecret) {
+          sessionStorage.setItem(`cs_order_${orderId}`, clientSecret);
+        }
         toast.success('Order created. Complete payment to confirm it.');
         navigate(`/orders/${orderId}`);
         return;

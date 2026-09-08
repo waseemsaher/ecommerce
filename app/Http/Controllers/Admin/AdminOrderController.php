@@ -53,11 +53,13 @@ class AdminOrderController extends Controller
     {
         $order = Order::findOrFail($id);
         $newStatus = OrderStatus::from($request->validated('status'));
-        $currentStatus = OrderStatus::from($order->status);
+        $currentStatus = $order->status instanceof OrderStatus
+            ? $order->status
+            : OrderStatus::from($order->status);
 
         if (! $currentStatus->canTransitionTo($newStatus)) {
             return response()->json([
-                'message' => "Cannot transition from {$order->status} to {$newStatus->value}.",
+                'message' => "Cannot transition from {$currentStatus->value} to {$newStatus->value}.",
                 'error' => 'INVALID_STATUS_TRANSITION',
             ], 422);
         }
