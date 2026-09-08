@@ -97,30 +97,25 @@ The backend adheres to a **Strict Layered Architecture** ensuring complete separ
 ## 📁 Repository Structure
 
 ```
-├── app/
-│   ├── Actions/               # Domain business operations (Order, Cart, Payment)
-│   │   ├── Cart/              # AddToCart, RemoveCartItem, ClearCart, UpdateCartItem
-│   │   ├── Order/             # CreateOrder, CreateOrderFromProduct, CancelOrder
-│   │   └── Payment/           # ProcessPaymentAction (Stripe intent + records)
-│   ├── Contracts/             # Interfaces (PaymentGatewayInterface, etc.)
-│   ├── Enums/                 # Type-safe statuses (OrderStatus, PaymentStatus)
-│   ├── Http/
-│   │   ├── Controllers/       # Thin API & Admin controllers
-│   │   │   ├── Admin/         # Analytics, Order, and Product management
-│   │   │   ├── Api/           # Product, Order, Payment, and Dashboard APIs
-│   │   │   └── Auth/          # Register, Login, Logout, Profile, Password Reset
-│   │   ├── Middleware/        # EnsureIdempotencyKey, EnsureAdmin
-│   │   └── Requests/          # Form requests with strict validation rules
-│   ├── Models/                # Eloquent models (User, Product, Order, Cart, Payment)
-│   └── Services/              # StripeGateway, CartCacheService
-├── bootstrap/                 # Application bootstrap & middleware aliases
-├── config/                    # Application, CORS, and Sanctum configurations
-├── database/
-│   ├── factories/             # Model factories for deterministic test generation
-│   ├── migrations/            # Versioned database schemas including roles
-│   └── seeders/               # Product catalog and default admin seeders
-├── docker/                    # Nginx, PHP-FPM, and MySQL configurations
-├── frontend/                  # React 19 Single Page Application
+ecommerce/
+├── backend/                   # Standalone Laravel 13 API Application
+│   ├── app/                   # Controllers, Form Requests, Actions, Models
+│   │   ├── Actions/           # Domain operations (Cart, Order, Payment)
+│   │   ├── Http/              # Controllers (Auth, Api, Admin) & Middleware
+│   │   ├── Models/            # Eloquent ORM Models (User, Order, Product, etc.)
+│   │   └── Services/          # External integrations (Stripe, CartCache)
+│   ├── bootstrap/             # App initialization & middleware aliases
+│   ├── config/                # Application, CORS, and Sanctum configs
+│   ├── database/              # Migrations, seeders, and factories
+│   ├── docker/                # PHP-FPM, Nginx, and MySQL container configs
+│   ├── public/                # index.php web server entrypoint
+│   ├── routes/                # REST API route definitions (api.php)
+│   ├── storage/               # Framework storage, cache, and logs
+│   ├── tests/                 # PHPUnit feature and unit tests (49 passing)
+│   ├── artisan                # Laravel CLI executable
+│   ├── composer.json          # Backend dependencies & scripts
+│   └── .env.example           # Backend environment template
+├── frontend/                  # Standalone React 19 + Vite SPA
 │   ├── src/
 │   │   ├── api/               # Axios API clients (auth, admin, cart, orders)
 │   │   ├── components/        # Reusable UI (AdminLayout, Header, Cards, Modals)
@@ -128,9 +123,12 @@ The backend adheres to a **Strict Layered Architecture** ensuring complete separ
 │   │   ├── pages/             # Route pages (Home, Products, Cart, Orders, Admin/*)
 │   │   ├── store/             # Zustand stores (authStore)
 │   │   └── styles/            # Page-specific CSS and design tokens
-├── routes/
-│   └── api.php                # RESTful API route definitions
-└── tests/                     # 100% passing PHPUnit feature & unit tests
+│   ├── package.json           # Frontend dependencies & scripts
+│   ├── vite.config.js         # Vite bundler configuration
+│   └── .env.example           # Frontend environment template (VITE_API_URL)
+├── docker-compose.yml         # Root local orchestration (App, Nginx, MySQL, Redis, Queue)
+├── .gitignore                 # Unified gitignore for both projects
+└── README.md                  # Project overview & documentation
 ```
 
 ---
@@ -145,48 +143,59 @@ Make sure [Docker](https://www.docker.com/) and [Docker Compose](https://docs.do
    ```bash
    git clone https://github.com/wasimsaher/ecommerce.git
    cd ecommerce
-   cp .env.example .env
+   cp backend/.env.example backend/.env
    cp frontend/.env.example frontend/.env
    ```
 
 2. **Start the containers**:
    ```bash
-   docker compose up -d --build
+   docker compose up -d
    ```
 
-3. **Install dependencies and run database migrations**:
+3. **Initialize the database & generate application key**:
    ```bash
-   docker compose exec app composer install
    docker compose exec app php artisan key:generate
    docker compose exec app php artisan migrate --seed
    ```
 
-4. **Access the application**:
-   - **Backend API**: `http://localhost:8000`
-   - **Frontend App**: `http://localhost:5173`
-
----
-
-### Option B: Local Development (Without Docker)
-
-**Requirements**: PHP 8.3+, Composer, Node.js 20+, MySQL 8.0, Redis.
-
-1. **Backend Setup**:
-   ```bash
-   composer install
-   cp .env.example .env
-   php artisan key:generate
-   
-   # Configure DB and Redis in .env, then migrate:
-   php artisan migrate --seed
-   ```
-
-2. **Frontend Setup**:
+4. **Start the Frontend Development Server**:
    ```bash
    cd frontend
    npm install
    npm run dev
    ```
+
+5. **Access the application**:
+   - **Backend API**: `http://localhost:8001/api`
+   - **Frontend App**: `http://localhost:5173`
+   - **Admin Account**: `admin@shopvault.com` / `password`
+
+---
+
+## 🚀 Deployment Guide
+
+Because the frontend and backend are completely decoupled, each can be deployed to the platform best suited for it without conflicts:
+
+### Backend Deployment (Laravel Cloud / Forge / Render / Docker)
+- **Application / Root Directory**: `backend`
+- **Build Command**: `composer install --no-dev --optimize-autoloader`
+- **Post-Deploy Command**: `php artisan migrate --force && php artisan config:cache && php artisan route:cache`
+- **Required Environment Variables**:
+  - `APP_ENV=production`, `APP_DEBUG=false`, `APP_KEY`, `APP_URL=https://<your-backend-domain>`
+  - `DB_HOST`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`
+  - `REDIS_HOST`, `REDIS_PASSWORD`
+  - `STRIPE_KEY`, `STRIPE_SECRET`, `STRIPE_WEBHOOK_SECRET`
+  - `CORS_ALLOWED_ORIGINS=https://<your-frontend-domain>`
+  - `SANCTUM_STATEFUL_DOMAINS=<your-frontend-domain>`
+
+### Frontend Deployment (Vercel / Netlify / Cloudflare Pages)
+- **Root Directory**: `frontend`
+- **Framework Preset**: `Vite`
+- **Build Command**: `npm run build`
+- **Output Directory**: `dist`
+- **Required Environment Variables**:
+  - `VITE_API_URL=https://<your-backend-domain>/api`
+  - `VITE_STRIPE_KEY=pk_live_...` (or test key for staging)
 
 3. **Start All Services Concurrently**:
    ```bash
