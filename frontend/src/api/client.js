@@ -3,7 +3,7 @@ import useAuthStore from '../store/authStore';
 
 const API_BASE_URL =
   import.meta.env.VITE_API_URL ||
-  'https://ecommerce-main-m5tim8.free.laravel.cloud/api';
+  'https://ecommerce-production-tnzc3v.laravel.cloud/api';
 
 const client = axios.create({
   baseURL: API_BASE_URL,
