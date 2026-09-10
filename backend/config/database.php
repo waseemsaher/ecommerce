@@ -155,6 +155,10 @@ return [
 
         'default' => [
             'url' => env('REDIS_URL'),
+            'ssl' => [
+                'verify_peer' => env('REDIS_SSL_VERIFY_PEER', true),
+                'verify_peer_name' => env('REDIS_SSL_VERIFY_PEER_NAME', true),
+            ],
             'host' => env('REDIS_HOST', '127.0.0.1'),
             'username' => env('REDIS_USERNAME'),
             'password' => env('REDIS_PASSWORD'),
@@ -168,6 +172,10 @@ return [
 
         'cache' => [
             'url' => env('REDIS_URL'),
+            'ssl' => [
+                'verify_peer' => env('REDIS_SSL_VERIFY_PEER', true),
+                'verify_peer_name' => env('REDIS_SSL_VERIFY_PEER_NAME', true),
+            ],
             'host' => env('REDIS_HOST', '127.0.0.1'),
             'username' => env('REDIS_USERNAME'),
             'password' => env('REDIS_PASSWORD'),
