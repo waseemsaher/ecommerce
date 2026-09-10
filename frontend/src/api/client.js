@@ -3,7 +3,7 @@ import useAuthStore from '../store/authStore';
 
 const API_BASE_URL =
   import.meta.env.VITE_API_URL ||
-  'https://ecommerce-production-tnzc3v.laravel.cloud/api';
+  'https://shopvault-backend-be2bc5ff835a.herokuapp.com/api';
 
 const client = axios.create({
   baseURL: API_BASE_URL,
