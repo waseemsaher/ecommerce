@@ -8,6 +8,19 @@ use App\Models\Product;
 
 class ProductSeeder extends Seeder
 {
+    private array $images = [
+        'Wireless Headphones' => 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=800&q=80',
+        'Mechanical Keyboard' => 'https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=800&q=80',
+        'USB-C Hub'           => 'https://images.unsplash.com/photo-1625842268584-8f3296236761?auto=format&fit=crop&w=800&q=80',
+        'Webcam 1080p'        => 'https://images.unsplash.com/photo-1587826080692-f439cd0b70da?auto=format&fit=crop&w=800&q=80',
+        'Desk Lamp LED'       => 'https://images.unsplash.com/photo-1507473885765-e6ed057f782c?auto=format&fit=crop&w=800&q=80',
+        'Mouse Pad XL'        => 'https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?auto=format&fit=crop&w=800&q=80',
+        'Laptop Stand'        => 'https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?auto=format&fit=crop&w=800&q=80',
+        'Portable SSD 1TB'    => 'https://images.unsplash.com/photo-1597872200969-2b65d56bd16b?auto=format&fit=crop&w=800&q=80',
+        'Bluetooth Speaker'   => 'https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?auto=format&fit=crop&w=800&q=80',
+        'Monitor 27" 4K'      => 'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&w=800&q=80',
+    ];
+
     public function run(): void
     {
         $products = [
@@ -87,18 +100,20 @@ class ProductSeeder extends Seeder
                 'name'        => 'Monitor 27" 4K',
                 'description' => '27 inch 4K IPS monitor, 144Hz.',
                 'price'       => 399.99,
-                'stock'       => 0,       // out of stock — good for testing
+                'stock'       => 0,
                 'sku'         => 'MON-001',
-                'is_active'   => false,   // inactive — good for testing filters
+                'is_active'   => false,
             ],
         ];
 
         foreach ($products as $data) {
-            $seed = rawurlencode(Str::slug($data['name']));
+            $slug = Str::slug($data['name']);
+            $image = $this->images[$data['name']] ?? "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?auto=format&fit=crop&w=800&q=80";
+
             Product::create([
                 ...$data,
-                'slug' => Str::slug($data['name']),
-                'image_path' => "https://picsum.photos/seed/{$seed}/800/800",
+                'slug' => $slug,
+                'image_path' => $image,
             ]);
         }
     }
