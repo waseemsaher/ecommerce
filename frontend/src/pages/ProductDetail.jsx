@@ -64,8 +64,7 @@ export default function ProductDetail() {
         if (clientSecret) {
           sessionStorage.setItem(`cs_order_${orderId}`, clientSecret);
         }
-        toast.success('Order created. Complete payment to confirm it.');
-        navigate(`/orders/${orderId}`);
+        navigate(`/checkout?order=${orderId}`);
         return;
       }
 
