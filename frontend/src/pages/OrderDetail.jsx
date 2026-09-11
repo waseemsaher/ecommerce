@@ -77,13 +77,16 @@ export default function OrderDetail() {
     queryFn: () => getOrder(numericOrderId),
     enabled: hasValidId,
     refetchInterval: (query) => {
+      if (query.state.error?.response?.status === 429) {
+        return false;
+      }
       const currentOrder = query.state.data?.data;
       if (!currentOrder) {
         return false;
       }
 
       if (['pending', 'processing'].includes(currentOrder.status)) {
-        return 5000;
+        return 8000;
       }
 
       return false;
@@ -108,12 +111,10 @@ export default function OrderDetail() {
   const apiStatus = error?.response?.status;
 
   // client_secret is only present on the initial creation response (never stored in DB).
-  // We keep it in sessionStorage so it survives refetches on this page.
-  const secretStorageKey = `cs_order_${id}`;
-  if (order?.client_secret) {
-    sessionStorage.setItem(secretStorageKey, order.client_secret);
-  }
-  const clientSecret = order?.client_secret || sessionStorage.getItem(secretStorageKey) || null;
+  // Check sessionStorage fallback if navigated from checkout
+  const clientSecret =
+    order?.payment?.client_secret ||
+    sessionStorage.getItem(`order_${id}_client_secret`);
 
   if (!hasValidId) {
     return (
@@ -121,11 +122,13 @@ export default function OrderDetail() {
         <div className="orders-page__inner container">
           <div className="orders-page__empty glass">
             <Package size={44} />
-            <h2>Invalid order link</h2>
-            <p>The order identifier in this URL is invalid.</p>
-            <Button variant="secondary" onClick={() => navigate('/orders')} icon={ArrowLeft}>
-              Back to orders
-            </Button>
+            <h2>Order not found</h2>
+            <p>The order ID in the URL is invalid.</p>
+            <div className="order-detail__error-actions">
+              <Link to="/orders">
+                <Button variant="secondary" icon={ArrowLeft}>Back to orders</Button>
+              </Link>
+            </div>
           </div>
         </div>
       </div>
@@ -152,13 +155,14 @@ export default function OrderDetail() {
   }
 
   if (error || !order) {
+    const isRateLimited = apiStatus === 429;
     return (
       <div className="orders-page page-enter">
         <div className="orders-page__inner container">
           <div className="orders-page__empty glass">
             <Package size={44} />
-            <h2>Order not found</h2>
-            <p>{apiMessage || 'The order you requested does not exist or cannot be loaded.'}</p>
+            <h2>{isRateLimited ? 'Too Many Requests' : 'Order not found'}</h2>
+            <p>{isRateLimited ? 'You are checking order updates quickly. Please wait a moment.' : (apiMessage || 'The order you requested does not exist or cannot be loaded.')}</p>
             {apiStatus ? <p>Please try again in a moment.</p> : null}
             <div className="order-detail__error-actions">
               <Button variant="secondary" icon={RefreshCw} onClick={() => refetch()}>
