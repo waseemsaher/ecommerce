@@ -18,16 +18,19 @@ export default function OrderSuccess() {
     queryFn: () => getOrder(numericOrderId),
     enabled: hasValidId,
     refetchInterval: (query) => {
+      if (query.state.error?.response?.status === 429) {
+        return false;
+      }
       const order = query.state.data?.data;
       if (!order) {
-        return 3000;
+        return 5000;
       }
 
       if (order.status === 'completed' || order.payment_status === 'paid') {
         return false;
       }
 
-      return 3000;
+      return 5000;
     },
   });
 

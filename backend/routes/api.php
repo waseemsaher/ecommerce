@@ -53,9 +53,13 @@ Route::prefix('v1')->group(function () {
                 ->middleware('idempotency');
             Route::post('/checkout', [OrderController::class, 'checkout'])
                 ->middleware('idempotency');
+            Route::post('/orders/{id}/cancel', [OrderController::class, 'cancel']);
+        });
+
+    Route::middleware(['auth:sanctum', 'throttle:orders'])
+        ->group(function () {
             Route::get('/orders', [OrderController::class, 'index']);
             Route::get('/orders/{id}', [OrderController::class, 'show']);
-            Route::post('/orders/{id}/cancel', [OrderController::class, 'cancel']);
             Route::get('/dashboard', [DashboardController::class, 'show']);
         });
 
