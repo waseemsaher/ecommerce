@@ -287,7 +287,8 @@ export default function OrderDetail() {
                       clientSecret={clientSecret}
                       orderNumber={order.order_number}
                       onSuccess={() => {
-                        sessionStorage.removeItem(secretStorageKey);
+                        sessionStorage.removeItem(`order_${id}_client_secret`);
+                        sessionStorage.removeItem(`cs_order_${id}`);
                         navigate(`/orders/${order.id}/success`);
                       }}
                     />
