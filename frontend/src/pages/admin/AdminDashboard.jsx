@@ -11,7 +11,16 @@ export default function AdminDashboard() {
     return <div className="admin__loading">Loading dashboard...</div>;
   }
 
-  const maxGrowth = growth ? Math.max(...growth.map((d) => d.count), 1) : 1;
+  const growthList = Array.isArray(growth) ? growth : [];
+  const topProductsList = Array.isArray(topProducts) ? topProducts : [];
+  const recentOrdersList = Array.isArray(summary?.recent_orders) ? summary.recent_orders : [];
+  const ordersByStatus = summary?.orders?.by_status && typeof summary.orders.by_status === 'object'
+    ? Object.entries(summary.orders.by_status).filter(([status]) => typeof status === 'string' && !status.startsWith('__'))
+    : [];
+
+  const maxGrowth = growthList.length > 0
+    ? Math.max(...growthList.map((d) => Number(d.count) || 0), 1)
+    : 1;
 
   return (
     <div>
@@ -22,11 +31,11 @@ export default function AdminDashboard() {
       <div className="admin__stats">
         <div className="admin__stat-card">
           <div className="admin__stat-label"><DollarSign size={14} style={{ display: 'inline', marginRight: 4 }} />Total Revenue</div>
-          <div className="admin__stat-value">${summary?.revenue?.total?.toLocaleString('en-US', { minimumFractionDigits: 2 }) || '0.00'}</div>
+          <div className="admin__stat-value">${Number(summary?.revenue?.total || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
         </div>
         <div className="admin__stat-card">
           <div className="admin__stat-label"><TrendingUp size={14} style={{ display: 'inline', marginRight: 4 }} />Today</div>
-          <div className="admin__stat-value">${summary?.revenue?.today?.toLocaleString('en-US', { minimumFractionDigits: 2 }) || '0.00'}</div>
+          <div className="admin__stat-value">${Number(summary?.revenue?.today || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
         </div>
         <div className="admin__stat-card">
           <div className="admin__stat-label"><ShoppingBag size={14} style={{ display: 'inline', marginRight: 4 }} />Total Orders</div>
@@ -42,13 +51,13 @@ export default function AdminDashboard() {
         {/* Order Status Breakdown */}
         <div className="admin__detail-card">
           <div className="admin__detail-title">Orders by Status</div>
-          {summary?.orders?.by_status && Object.entries(summary.orders.by_status).map(([status, count]) => (
+          {ordersByStatus.map(([status, count]) => (
             <div className="admin__detail-row" key={status}>
               <span className={`admin__badge admin__badge--${status}`}>{status}</span>
-              <span className="admin__detail-value">{count}</span>
+              <span className="admin__detail-value">{String(count)}</span>
             </div>
           ))}
-          {(!summary?.orders?.by_status || Object.keys(summary.orders.by_status).length === 0) && (
+          {ordersByStatus.length === 0 && (
             <p style={{ fontSize: '0.8125rem', color: 'var(--text-tertiary)' }}>No orders yet</p>
           )}
         </div>
@@ -60,15 +69,15 @@ export default function AdminDashboard() {
             <div className="admin__loading">Loading...</div>
           ) : (
             <div className="admin__chart-bars">
-              {growth?.map((day) => (
+              {growthList.map((day) => (
                 <div
                   key={day.date}
                   className="admin__chart-bar"
-                  style={{ height: `${(day.count / maxGrowth) * 100}%` }}
+                  style={{ height: `${((Number(day.count) || 0) / maxGrowth) * 100}%` }}
                   title={`${day.date}: ${day.count} users`}
                 />
               ))}
-              {(!growth || growth.length === 0) && (
+              {growthList.length === 0 && (
                 <p style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>No data</p>
               )}
             </div>
@@ -93,14 +102,14 @@ export default function AdminDashboard() {
               </tr>
             </thead>
             <tbody>
-              {topProducts?.map((p) => (
+              {topProductsList.map((p) => (
                 <tr key={p.product_id}>
                   <td>{p.product_name}</td>
                   <td>{p.total_sold}</td>
-                  <td>${Number(p.total_revenue).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+                  <td>${Number(p.total_revenue || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
                 </tr>
               ))}
-              {(!topProducts || topProducts.length === 0) && (
+              {topProductsList.length === 0 && (
                 <tr><td colSpan={3} style={{ textAlign: 'center', color: 'var(--text-tertiary)' }}>No sales data</td></tr>
               )}
             </tbody>
@@ -125,16 +134,16 @@ export default function AdminDashboard() {
             </tr>
           </thead>
           <tbody>
-            {summary?.recent_orders?.map((order) => (
+            {recentOrdersList.map((order) => (
               <tr key={order.id}>
                 <td><Link to={`/admin/orders/${order.id}`} style={{ color: 'var(--accent)' }}>{order.order_number}</Link></td>
                 <td>{order.user?.name || 'N/A'}</td>
                 <td><span className={`admin__badge admin__badge--${order.status}`}>{order.status}</span></td>
-                <td>${Number(order.total).toFixed(2)}</td>
-                <td>{new Date(order.created_at).toLocaleDateString()}</td>
+                <td>${Number(order.total || 0).toFixed(2)}</td>
+                <td>{order.created_at ? new Date(order.created_at).toLocaleDateString() : 'N/A'}</td>
               </tr>
             ))}
-            {(!summary?.recent_orders || summary.recent_orders.length === 0) && (
+            {recentOrdersList.length === 0 && (
               <tr><td colSpan={5} style={{ textAlign: 'center', color: 'var(--text-tertiary)' }}>No orders yet</td></tr>
             )}
           </tbody>

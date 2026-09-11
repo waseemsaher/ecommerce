@@ -8,6 +8,7 @@ use App\Http\Requests\Admin\UpdateOrderStatusRequest;
 use App\Models\Order;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class AdminOrderController extends Controller
 {
@@ -73,6 +74,9 @@ class AdminOrderController extends Controller
         }
 
         $order->update(['status' => $newStatus->value]);
+
+        Cache::forget('admin:analytics:summary');
+        Cache::forget('admin:analytics:top-products');
 
         return response()->json(['data' => $order->fresh(['user:id,name,email', 'items', 'payment'])]);
     }

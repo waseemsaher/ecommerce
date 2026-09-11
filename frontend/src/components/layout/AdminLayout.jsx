@@ -1,6 +1,7 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, ShoppingBag, Package, LogOut, ChevronLeft } from 'lucide-react';
 import { useLogout } from '../../hooks/useAuth';
+import ErrorBoundary from '../shared/ErrorBoundary';
 import '../../styles/pages/Admin.css';
 
 export default function AdminLayout() {
@@ -51,7 +52,9 @@ export default function AdminLayout() {
       </aside>
 
       <main className="admin__content">
-        <Outlet />
+        <ErrorBoundary>
+          <Outlet />
+        </ErrorBoundary>
       </main>
     </div>
   );
