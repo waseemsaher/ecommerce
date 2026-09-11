@@ -274,8 +274,8 @@ export default function OrderDetail() {
                       appearance: {
                         theme: theme === 'light' ? 'stripe' : 'night',
                         variables: {
-                          colorPrimary: '#7c5cfc',
-                          colorText: theme === 'light' ? '#0b1220' : '#f0f0f8',
+                          colorPrimary: '#7B9669',
+                          colorText: theme === 'light' ? '#404E3B' : '#f2f6f0',
                           colorBackground: 'transparent',
                           colorDanger: '#ff6b6b',
                           fontFamily: 'Inter, system-ui, sans-serif',
