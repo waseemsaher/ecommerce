@@ -3,8 +3,8 @@
    ═══════════════════════════════════════════════════════════════ */
 
 .checkout-page {
-  padding: calc(var(--header-height) + var(--space-8)) 0 var(--space-16);
-  min-height: 90vh;
+  padding: var(--space-8) 0 var(--space-16);
+  min-height: calc(90vh - var(--header-height));
 }
 
 .checkout-page__inner {
@@ -228,7 +228,7 @@
 /* ── Right Column: Order Summary ─────────────────────────────── */
 .checkout__col-side {
   position: sticky;
-  top: calc(var(--header-height) + var(--space-6));
+  top: var(--space-6);
 }
 
 .checkout-summary {

@@ -1,7 +1,7 @@
 /* ── Products Page ───────────────────────────────────────────── */
 .products-page {
-  padding: calc(var(--header-height) + var(--space-8)) 0 var(--space-16);
-  min-height: 100vh;
+  padding: var(--space-8) 0 var(--space-16);
+  min-height: calc(100vh - var(--header-height));
 }
 
 .products-page__header {
