@@ -1,11 +1,11 @@
 import { Component } from 'react';
 import Button from '../ui/Button';
-import { AlertTriangle, RefreshCw } from 'lucide-react';
+import { AlertTriangle, RefreshCw, Home, ArrowLeft } from 'lucide-react';
 
 export default class ErrorBoundary extends Component {
   constructor(props) {
     super(props);
-    this.state = { hasError: false, error: null };
+    this.state = { hasError: false, error: null, errorInfo: null };
   }
 
   static getDerivedStateFromError(error) {
@@ -14,14 +14,20 @@ export default class ErrorBoundary extends Component {
 
   componentDidCatch(error, info) {
     console.error('[ErrorBoundary]', error, info);
+    this.setState({ errorInfo: info });
   }
 
   handleReset = () => {
-    this.setState({ hasError: false, error: null });
+    this.setState({ hasError: false, error: null, errorInfo: null });
+    // Force a fresh reload if state recovery doesn't work
+    window.location.reload();
   };
 
   render() {
     if (this.state.hasError) {
+      const isAdmin = window.location.pathname.startsWith('/admin');
+      const errorMessage = this.state.error?.message || 'An unexpected error occurred.';
+
       return (
         <div
           style={{
@@ -37,14 +43,42 @@ export default class ErrorBoundary extends Component {
         >
           <AlertTriangle size={48} strokeWidth={1.2} style={{ color: 'var(--danger)' }} />
           <h2 style={{ fontSize: '1.25rem', fontWeight: 600 }}>Something went wrong</h2>
-          <p style={{ color: 'var(--text-secondary)', maxWidth: '400px' }}>
-            An unexpected error occurred. You can try refreshing the page or going back.
+          
+          {/* Clear error message display */}
+          <div
+            style={{
+              background: 'var(--bg-secondary, rgba(0,0,0,0.05))',
+              border: '1px solid var(--border)',
+              borderRadius: '8px',
+              padding: '0.75rem 1rem',
+              maxWidth: '500px',
+              color: 'var(--danger)',
+              fontSize: '0.875rem',
+              wordBreak: 'break-word',
+              fontFamily: 'monospace',
+            }}
+          >
+            {errorMessage}
+          </div>
+
+          <p style={{ color: 'var(--text-secondary)', maxWidth: '420px', fontSize: '0.875rem' }}>
+            You can try reloading the page or returning to the previous screen.
           </p>
+
           <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', justifyContent: 'center' }}>
             <Button icon={RefreshCw} onClick={this.handleReset} variant="secondary">
               Try again
             </Button>
-            <Button onClick={() => { window.location.href = '/'; }}>
+            {isAdmin ? (
+              <Button icon={ArrowLeft} onClick={() => { window.location.href = '/admin'; }} variant="secondary">
+                Admin Dashboard
+              </Button>
+            ) : (
+              <Button icon={ArrowLeft} onClick={() => window.history.back()} variant="secondary">
+                Go back
+              </Button>
+            )}
+            <Button icon={Home} onClick={() => { window.location.href = '/'; }}>
               Go home
             </Button>
           </div>
@@ -55,3 +89,4 @@ export default class ErrorBoundary extends Component {
     return this.props.children;
   }
 }
+

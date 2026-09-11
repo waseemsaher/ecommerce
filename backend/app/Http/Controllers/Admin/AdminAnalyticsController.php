@@ -26,7 +26,8 @@ class AdminAnalyticsController extends Controller
 
             $ordersByStatus = Order::select('status', DB::raw('count(*) as count'))
                 ->groupBy('status')
-                ->pluck('count', 'status');
+                ->pluck('count', 'status')
+                ->toArray();
 
             $totalOrders = Order::count();
             $totalUsers = User::count();
@@ -34,7 +35,8 @@ class AdminAnalyticsController extends Controller
             $recentOrders = Order::with('user:id,name,email')
                 ->latest()
                 ->take(10)
-                ->get(['id', 'order_number', 'user_id', 'status', 'payment_status', 'total', 'created_at']);
+                ->get(['id', 'order_number', 'user_id', 'status', 'payment_status', 'total', 'created_at'])
+                ->toArray();
 
             return [
                 'revenue' => [
@@ -66,7 +68,8 @@ class AdminAnalyticsController extends Controller
                 ->groupBy('product_id', 'product_name')
                 ->orderByDesc('total_sold')
                 ->take(10)
-                ->get();
+                ->get()
+                ->toArray();
         });
 
         return response()->json(['data' => $data]);
@@ -82,7 +85,8 @@ class AdminAnalyticsController extends Controller
                 ->where('created_at', '>=', now()->subDays(30))
                 ->groupBy('date')
                 ->orderBy('date')
-                ->get();
+                ->get()
+                ->toArray();
         });
 
         return response()->json(['data' => $data]);
