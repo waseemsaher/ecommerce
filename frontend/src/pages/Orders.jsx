@@ -1,5 +1,5 @@
 import '../styles/pages/Orders.css';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { usePageTitle } from '../hooks/usePageTitle';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -20,6 +20,7 @@ export default function Orders() {
   usePageTitle('My Orders');
   const [cursor, setCursor] = useState(null);
   const [allOrders, setAllOrders] = useState([]);
+  const lastMergedCursor = useRef(undefined);
 
   const { data, isLoading, isFetching } = useQuery({
     queryKey: ['orders', cursor],
@@ -34,22 +35,27 @@ export default function Orders() {
       );
       return hasActive ? 5000 : false;
     },
-    onSuccess: (incoming) => {
-      setAllOrders((prev) =>
-        cursor === null
-          ? incoming.data || []
-          : [...prev, ...(incoming.data || [])]
-      );
-    },
   });
 
-  // Merge in pages that come back (handles both first load and load-more)
+  // Replaces the removed onSuccess callback — append new page data when it arrives
+  useEffect(() => {
+    if (!data) return;
+    // Avoid re-merging on refetches for the same cursor
+    if (lastMergedCursor.current === cursor) return;
+    lastMergedCursor.current = cursor;
+
+    if (cursor === null) {
+      setAllOrders(data.data || []);
+    } else {
+      setAllOrders((prev) => [...prev, ...(data.data || [])]);
+    }
+  }, [data, cursor]);
+
   const pageOrders = data?.data || [];
   const displayOrders = cursor === null ? pageOrders : allOrders;
   const nextCursor = data?.meta?.next_cursor || null;
 
   const handleLoadMore = () => {
-    setAllOrders((prev) => [...prev, ...pageOrders]);
     setCursor(nextCursor);
   };
 
